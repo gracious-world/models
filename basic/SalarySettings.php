@@ -116,8 +116,8 @@ class SalarySettings extends BaseModel {
             $oSalarySetting->game_type = 1;
             $oSalarySetting->game_type_name = '数字彩';
             $oSalarySetting->turnover = $iTurnover;
-            $oSalarySetting->rate = $fRate;
-            $oSalarySetting->is_accepted = 1;
+            $oSalarySetting->salary = $fRate;
+            $oSalarySetting->is_accepted = 0;
             if(!$oSalarySetting->save()) {
                 DB::connection()->rollBack();
                 return false;
