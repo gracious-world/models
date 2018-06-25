@@ -64,9 +64,10 @@ class SalarySettings extends BaseModel {
      *
      * @return mixed
      */
-    public static function getSalarySettingsByUserId($iUserId) {
+    public static function getSalarySettingsByUserId($iUserId,$iStatus=1) {
         $aSalarySettings = static::select('turnover', 'salary')
-            ->where('user_id',$iUserId)
+            ->where('user_id', $iUserId)
+            ->where('is_accepted', $iStatus)
             ->orderBy('turnover', 'desc')
             ->get()
             ->toArray();
