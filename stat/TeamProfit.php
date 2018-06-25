@@ -549,5 +549,33 @@ class TeamProfit extends BaseModel {
         return $rs->get()[0];
     }
 
+    /**
+     * 查询某天内用户的团队盈亏
+     *
+     * @author Garin
+     * @date 2016-11-09
+     *
+     * @param $sDate 时间
+     * @param $aUserIds 用户id
+     * @param $iUserLevel 用户层级  [默认值false,不限制层级;其他和系统层级对应的值则限制生效]
+     *
+     * @return mixed
+     */
+    public static function getProfitByDateAndUserIds($sDate, $aUserIds, $iUserLevel = false) {
+        if (empty($sDate)) {
+            return false;
+        }
 
+        $aConditions['date'] = ['=', $sDate];
+        //用户层级 默认为不限制层级
+        if ($iUserLevel !== false && $iUserLevel >= 0) {
+            $aConditions['user_level'] = ['<=', $iUserLevel];
+        }
+
+        if (!empty($aUserIds)) {
+            $aConditions['user_id'] = ['in', $aUserIds];
+        }
+
+        return static::doWhere($aConditions)->get(['id', 'user_id', 'turnover', 'date']);
+    }
 }

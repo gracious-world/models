@@ -24,6 +24,8 @@ class UserDailySalary extends BaseModel {
         'user_level',
         'turnover',
         'salary',
+        'year',
+        'month',
         'date',
         'created_at',
         'updated_at'
@@ -38,6 +40,8 @@ class UserDailySalary extends BaseModel {
         'turnover'   => 'numeric',
         'salary'     => 'numeric',
         'date'       => 'required|date',
+        'year'       => 'required|integer',
+        'month'       => 'required|max:12|min:1',
     ];
     public static $ignoreColumnsInEdit = [
         'id',
@@ -86,6 +90,8 @@ class UserDailySalary extends BaseModel {
         'user_level' => 'user_level_formatted'
     ];
     public static $columnForList   = [
+        'year',
+        'month',
         'date',
         'username',
         'role_name',
@@ -226,6 +232,8 @@ class UserDailySalary extends BaseModel {
         $oUserDailySalary->turnover   = $aUserProfits['turnover'];
         $oUserDailySalary->salary     = $aUserProfits['salary'];
         $oUserDailySalary->date       = $sDate;
+        $oUserDailySalary->year       = Date('Y', strtotime($sDate));
+        $oUserDailySalary->month      = Date('m', strtotime($sDate));
         $oUserDailySalary->status     = static::SALARY_STATUS_CREATED;
         $oUserDailySalary->note       = isset($aExtraData['note']) ? $aExtraData['note'] : '';
         $oUserDailySalary->extra_data = isset($aExtraData['extra_data']) ? $aExtraData['extra_data'] : '';
@@ -239,6 +247,36 @@ class UserDailySalary extends BaseModel {
         //只记录信息，不用锁钱包了，用于该字段不能为空，给个默认值0
         $oUserDailySalary->account_id = 0;
         return $oUserDailySalary->save();
+    }
+
+    /**
+     * 查询某天内用户的团队盈亏
+     *
+     * @author Garin
+     * @date 2016-11-09
+     *
+     * @param $sDate 时间
+     * @param $aUserIds 用户id
+     * @param $iUserLevel 用户层级  [默认值false,不限制层级;其他和系统层级对应的值则限制生效]
+     *
+     * @return mixed
+     */
+    public static function getProfitByDateAndUserIds($sDate, $aUserIds, $iUserLevel = false) {
+        if (empty($sDate)) {
+            return false;
+        }
+
+        $aConditions['date'] = ['=', $sDate];
+        //用户层级 默认为不限制层级
+        if ($iUserLevel !== false && $iUserLevel >= 0) {
+            $aConditions['user_level'] = ['=', $iUserLevel];
+        }
+
+        if (!empty($aUserIds)) {
+            $aConditions['user_id'] = ['in', $aUserIds];
+        }
+
+        return static::doWhere($aConditions)->get(['id', 'user_id', 'turnover', 'date']);
     }
 
 }
