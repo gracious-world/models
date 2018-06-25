@@ -8,7 +8,7 @@
  */
 class UserDailySalary extends BaseModel {
 
-    protected $table                   = 'user_daily_salary';
+    protected $table                   = 'user_daily_salaries';
     public static $resourceName        = 'UserDailySalary';
     public static $amountAccuracy      = 6;
     public static $htmlNumberColumns   = [
