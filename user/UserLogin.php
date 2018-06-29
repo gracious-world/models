@@ -84,7 +84,7 @@ class UserLogin extends BaseModel {
                 'ip'              => Tool::getClientIp(),
                 'signed_time'     => time(),
                 'session_id'      => Session::getId(),
-                'http_user_agent' => $_SERVER['HTTP_USER_AGENT'],
+                'http_user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT']:null,
                 'terminal_id' => Session::get('terminal_id')
             ]
         );

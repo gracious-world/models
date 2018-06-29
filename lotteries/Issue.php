@@ -765,4 +765,45 @@ class Issue extends BaseModel {
         return $aIssues;
     }
 
+    /**
+     * 返回最近n期的开奖号码
+     * @param int $iLotteryId
+     * @return array | false            issue wn_number
+     */
+    public static function & getLatestWnNumbersByStatus($iLotteryId, $iCount = 1,$iHasWinNumber) {
+        $redis       = Redis::connection();
+        $sCacheKey   = static::compileRecentWnNumbersCacheKey($iLotteryId);
+        $aIssues     = [];
+//        if ($bHasInRedis = $redis->exists($sCacheKey)) {
+//            $aIssues = static::getDataFromRedis($redis, $sCacheKey, $iCount, $iNeedCount);
+//        } else {
+//            $iNeedCount = $iCount;
+//        }
+        $iNeedCount = $iCount;
+        if (! $redis->exists($sCacheKey) || $iNeedCount > 0) {
+            $oMoreIssues    = static::getRecentIssuesFromDbByStatus($iLotteryId, $iNeedCount, count($aIssues), $iHasWinNumber);
+            $aMoreIssues    = & static::pushToList($redis, $sCacheKey, $oMoreIssues, false);
+            $iOnSaleEndTime = static::getOnSaleIssueEndTime($iLotteryId);
+            $redis->expire($sCacheKey, $iOnSaleEndTime - time());
+            $aIssues        = array_merge($aIssues, $aMoreIssues);
+        }
+//        pr($aIssues);
+//        exit;
+        return $aIssues;
+    }
+
+    protected static function getRecentIssuesFromDbByStatus($iLotteryId, $iCount = 6, $iSkipCount = null, $iHasWnNumber = false) {
+        $sTime      = date('Y-m-d H:i:s', strtotime('-12 days'));
+        $sTime2     = date('Y-m-d H:i:s');
+        $aColumns   = ['issue', 'wn_number', 'offical_time'];
+        $aCondtions = [
+            'end_time2'  => ['between', [$sTime, $sTime2]],
+            'lottery_id' => [ '=', $iLotteryId],
+            'end_time'   => [ '<=', time()],
+        ];
+        $iStatus  = $iHasWnNumber ? [self::ISSUE_CODE_STATUS_FINISHED,self::ISSUE_CODE_STATUS_ADVANCE_A,self::ISSUE_CODE_STATUS_ADVANCE_B] : [self::ISSUE_CODE_STATUS_WAIT_CODE,self::ISSUE_CODE_STATUS_FINISHED,self::ISSUE_CODE_STATUS_ADVANCE_A,self::ISSUE_CODE_STATUS_ADVANCE_B];
+        $aCondtions['status'] = ['in', $iStatus];
+        return static::doWhere($aCondtions)->orderBy('issue', 'desc')->skip($iSkipCount)->limit($iCount)->get($aColumns);
+    }
+
 }

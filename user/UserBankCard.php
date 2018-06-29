@@ -319,4 +319,18 @@ class UserBankCard extends BaseModel {
         return '**' . substr($this->account_name, -3);
     }
 
+    /**
+     * 获取 指定状态的 unlock_time 是最小值的
+     * @author lucda
+     * @date    2016-11-04
+     *
+     * @param $iUserId
+     * @param $iStatus
+     * @return string
+     */
+    static function getMinUnlockTimeByUserIdStatus($iUserId, $iStatus) {
+        $aMinUnlockTime = static::doWhere(['user_id' => ['=', $iUserId], 'status' => ['=', $iStatus]])->select(DB::raw("min(unlock_time) min_unlock_time"))->first()->toArray();
+        $sMinUnlockTime = $aMinUnlockTime['min_unlock_time'];
+        return $sMinUnlockTime;
+    }
 }
