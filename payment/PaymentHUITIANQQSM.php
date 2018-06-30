@@ -6,7 +6,8 @@
  * Date: 18-1-26
  * Time: 下午4:46
  */
-class PaymentHUITIANQQ extends BasePlatform {
+class PaymentHUITIANQQSM extends PaymentHUITIANWY {
+    protected $paymentName= 'huitianqqsm';
     // 保存二维码
     public $saveQr = false;
     public $isqrcode = 'Y';

@@ -6,7 +6,7 @@
  * @author lucky
  *
  */
-class PaymentYONGFUZFB extends PaymentYONGFUWY
+class PaymentYONGFUZFBYD extends PaymentYONGFUWY
 {
 
     protected $paymentName= 'yongfuzfb';

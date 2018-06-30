@@ -6,11 +6,13 @@
  * Date: 18-1-26
  * Time: 下午4:46
  */
-class PaymentHUITIAN extends BasePlatform {
+class PaymentHUITIANWY extends BasePlatform {
+
+    protected $paymentName= 'huitianwy';
     // 保存二维码
     public $saveQr = false;
     public $isqrcode = 'Y';
-    public $qrDirName = 'huitianqq';
+    public $qrDirName = 'huitianwy';
     // 回调处理成功时，输出的字符串
     public $successMsg = 'ErrCode=0';
     // 签名变量名

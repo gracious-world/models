@@ -6,7 +6,7 @@
  * @author lucky
  *
  */
-class PaymentYONGFU extends BasePlatform {
+class PaymentYONGFUWY extends BasePlatform {
 
 
 	public $successMsg             = 'SUCCESS';
@@ -29,7 +29,7 @@ class PaymentYONGFU extends BasePlatform {
 
 	public    $bankTimeColumn = "OrderDate";
 
-	protected $paymentName= 'jx';
+	protected $paymentName= 'yongfuwy';
 
 	//交易签名所需字段
 	public $signNeedColumns = [
