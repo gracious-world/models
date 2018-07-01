@@ -30,6 +30,7 @@ class PaymentYONGFUQQ extends PaymentYONGFUWY
             'pay_channelCode' => $this->channelCode,
             'pay_notifyurl' => $oPaymentPlatform->notify_url,
         ];
+        !$this->isMoblie or $aSignData['isMobile'] = 'true';
 
         $aSignData['pay_md5sign'] = $this->compileSign($oPaymentAccount, $aSignData, $this->signNeedColumns);
 //        var_dump(__FILE__,__LINE__,$aSignData);exit;

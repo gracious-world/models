@@ -6,11 +6,11 @@
  * @author lucky
  *
  */
-class PaymentYONGFUZFBYD extends PaymentYONGFUWY
+class PaymentYONGFUZFBYD extends PaymentYONGFUZFB
 {
 
-    protected $paymentName = 'yongfuzfb';
-    protected $channelCode = 'ALIPAY_WAP';
-    protected $isMobile = true;
+    public $paymentName = 'yongfuzfb';
+    public $channelCode = 'ALIPAY_WAP';
+    public $isMobile = true;
 }
 
