@@ -64,7 +64,7 @@ class PaymentHUIYUAN extends BasePlatform {
      * @param PaymentPlatform $oPaymentPlatform
      * @param string $sOrderNo
      * @param string $sServiceOrderNo
-     * @param array & $aResonses
+     * @param array & $aResponses
      * @return integer | boolean
      *  1: Success
      *  -1: Query Failed
@@ -73,7 +73,7 @@ class PaymentHUIYUAN extends BasePlatform {
      *  -4: No Order
      *  -5: Unpay
      */
-    public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResonses) {
+    public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResponses) {
         $aDataQuery = $this->compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo);
         foreach ($aDataQuery as $k => $v) {
             $aQueryStr[] = $k . '=' . $v;
@@ -98,25 +98,25 @@ class PaymentHUIYUAN extends BasePlatform {
         }
 
         $aQueryResonses = explode('|', $sResponse);
-        $aResonses      = [];
+        $aResponses      = [];
         foreach ($aQueryResonses as $v) {
             $aResonse                = explode('=', $v);
             if (count($aResonse) == 1){
                 return self::PAY_NO_ORDER;
             }
-            $aResonses[$aResonse[0]] = $aResonse[1];
+            $aResponses[$aResonse[0]] = $aResonse[1];
         }
 
-        if ($aResonses['payResult'] == '0') {      // NO ORDER
+        if ($aResponses['payResult'] == '0') {      // NO ORDER
             return self::PAY_NO_ORDER;
         }
 
-        $sDinpaySign      = $aResonses['hmac'];
+        $sDinpaySign      = $aResponses['hmac'];
         $aCompileSignNeed = [
-            'merchantId' => $aResonses['merchantId'],
-            'orderId'    => $aResonses['orderId'],
-            'realAmount' => $aResonses['realAmount'],
-            'payResult'  => $aResonses['payResult'],
+            'merchantId' => $aResponses['merchantId'],
+            'orderId'    => $aResponses['orderId'],
+            'realAmount' => $aResponses['realAmount'],
+            'payResult'  => $aResponses['payResult'],
         ];
         $sSign            = $this->compileSign($oPaymentAccount, $aCompileSignNeed);
 
@@ -124,7 +124,7 @@ class PaymentHUIYUAN extends BasePlatform {
             return self::PAY_SIGN_ERROR;
         }
 
-        if ($aResonses['payResult'] == 1 && $aResonses['realAmount'] > 0) {
+        if ($aResponses['payResult'] == 1 && $aResponses['realAmount'] > 0) {
             return self::PAY_SUCCESS;
         }
 

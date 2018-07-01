@@ -9,7 +9,8 @@
 class PaymentYONGFUQQ extends PaymentYONGFUWY
 {
 
-    protected $paymentName= 'yongfuqq';
+    protected $paymentName = 'yongfuqq';
+    protected $payment_type = 'QQ';
 
 }
 

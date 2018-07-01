@@ -10,6 +10,6 @@ class PaymentYONGFUWXSM extends PaymentYONGFUWY
 {
 
     protected $paymentName= 'yongfuwxsm';
-
+    protected $payment_type = 'WECHAT';
 }
 

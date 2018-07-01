@@ -91,7 +91,7 @@ class PaymentHUIYUANZFB extends BasePlatform {
      * @param PaymentPlatform $oPaymentPlatform
      * @param string $sOrderNo
      * @param string $sServiceOrderNo
-     * @param array & $aResonses
+     * @param array & $aResponses
      * @return integer | boolean
      *  1: Success
      *  -1: Query Failed
@@ -100,7 +100,7 @@ class PaymentHUIYUANZFB extends BasePlatform {
      *  -4: No Order
      *  -5: Unpay
      */
-    public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResonses) {
+    public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResponses) {
         $aDataQuery = $this->compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo);
         $aQueryStr  = [];
         foreach ($aDataQuery as $k => $v) {
@@ -126,30 +126,30 @@ class PaymentHUIYUANZFB extends BasePlatform {
         }
 
         $aQueryResonses = explode('|', $sResponse);
-        $aResonses      = [];
+        $aResponses      = [];
         foreach ($aQueryResonses as $v) {
             $aResonse                = explode('=', $v);
             if (count($aResonse) == 1){
                 return self::PAY_NO_ORDER;
             }
-            $aResonses[$aResonse[0]] = $aResonse[1];
+            $aResponses[$aResonse[0]] = $aResonse[1];
         }
 
-        if ($aResonses['result'] == '0') {      // NO ORDER
+        if ($aResponses['result'] == '0') {      // NO ORDER
             return self::PAY_NO_ORDER;
         }
 
-        $sDinpaySign = $aResonses['sign'];
+        $sDinpaySign = $aResponses['sign'];
 
         $aCompileSignNeed = [
-            'agent_id'      => $aResonses['agent_id'],
-            'agent_bill_id' => $aResonses['agent_bill_id'],
-            'jnet_bill_no'  => $aResonses['jnet_bill_no'],
+            'agent_id'      => $aResponses['agent_id'],
+            'agent_bill_id' => $aResponses['agent_bill_id'],
+            'jnet_bill_no'  => $aResponses['jnet_bill_no'],
             'pay_type'      => 50,
-            'result'        => $aResonses['result'],
-            'pay_amt'       => $aResonses['pay_amt'],
-            'pay_message'   => $aResonses['pay_message'],
-            'remark'        => $aResonses['remark'],
+            'result'        => $aResponses['result'],
+            'pay_amt'       => $aResponses['pay_amt'],
+            'pay_message'   => $aResponses['pay_message'],
+            'remark'        => $aResponses['remark'],
         ];
         $sSign            = $this->compileQuerySign($oPaymentAccount, $aCompileSignNeed);
 
@@ -157,7 +157,7 @@ class PaymentHUIYUANZFB extends BasePlatform {
             return self::PAY_SIGN_ERROR;
         }
 
-        if ($aResonses['result'] == 1 && $aResonses['pay_amt'] > 0) {
+        if ($aResponses['result'] == 1 && $aResponses['pay_amt'] > 0) {
             return self::PAY_SUCCESS;
         }
 

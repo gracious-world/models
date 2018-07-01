@@ -9,56 +9,73 @@
 class PaymentYONGFUWY extends BasePlatform {
 
 
-	public $successMsg             = 'SUCCESS';
-	public $signColumn             = 'signature';
-	public $accountColumn          = 'merNo';
-	public $orderNoColumn          = 'orderNo';
-	public $paymentOrderNoColumn   = 'payId';
-	public $successColumn          = 'respCode';
-	public $successValue           = '0000';
-	public $amountColumn           = 'transAmt';
-	public $bankNoColumn           = 'bankCode';
-	public $unSignColumns          = [];
-	public $serviceOrderTimeColumn = '';
+	protected $paymentName= 'huitianwy';
+    // 保存二维码
+    public $saveQr = false;
+    public $isqrcode = 0;
+    public $qrDirName = 'huitianwy';
+    // 回调处理成功时，输出的字符串
+    public $successMsg = 'SUCCESS';
+    // 签名变量名
+    public $signColumn = 'pay_md5sign';
+    // 帐号变量名
+    public $accountColumn = 'pay_memberid';
+    // 订单号变量名
+    public $orderNoColumn = 'pay_orderid';
+    // 渠道方订单号变量名
+    public $paymentOrderNoColumn = 'pay_orderid'; //通知结果中没有平台订单号，用商户号代替
+    // 回调的数据中，可用于检验是否成功的变量名
+    public $successColumn = 'P_ErrCode';
+    // 回调的数据中,标志成功的变量值
+    public $successValue = '0';
+    // 金额变量名
+    public $amountColumn = 'pay_amount';
 
-	public $transId       = "01";
-	public $queryTransId       = "04";
-	public $version       = "V1.0";
-	public $productId     = "0117";
-	public $commodityName = 'charge';
+    // 回调数据中,平台订单时间变量名
+    public $serviceOrderTimeColumn = 'datetime';
+    // 银行类型 QQ 扫码：89  微信扫码：21
+    /**
+     * ALIPAY_WAP:支付宝WAP
+     * ALIPAY:支付宝扫码
+     * BANK:网银
+     * BANK_WAP:网银快捷
+     * WECHAT:微信扫码
+     * WECHAT_WAP:微信 WAP
+     * QQ:QQ 扫码
+     * QQ_WAP:QQWAP
+     * JD:京东扫码
+     */
+    protected $payment_type = 'BANK';
 
-	public    $bankTimeColumn = "OrderDate";
+    // 参加签名的变量数组
+    public $signNeedColumns = [ //充值请求
+        'pay_memberid',
+        'pay_orderid',
+        'pay_amount',
+        'pay_applydate',
+        'pay_channelCode',
+    ];
 
-	protected $paymentName= 'yongfuwy';
+    // 通知需要验签的数组
+    public $compileNofifySignColumns = [
+        'memberid',
+        'orderid',
+        'amount',
+        'datetime',
+        'channelCode',
+    ];
 
-	//交易签名所需字段
-	public $signNeedColumns = [
-		'requestNo',
-		'productId',
-		'transId',
-		'merNo',
-		'orderNo',
-		'transAmt',
-		'bankCode',
-	];
+    //查询需要验签的数组
+    public $querySignNeedColumns = [
+        'pay_memberid',
+        'pay_orderid',
+    ];
 
-	//查询签名字段
-	public $querySignNeedColumns = [
-			'requestNo',
-			'transId',
-			'merNo',
-			'orderNo'
-	];
-
-	//通知签名字段
-	public $returnSignNeedColumns = [
-			'merNo',
-			'orderNo',
-			'transAmt',
-			'respCode',
-			'payId',
-			'payTime'
-	];
+    //查询结果需要验签的数组
+    public $queryResultSignNeedColumns = [
+        'pay_memberid',
+        'pay_orderid',
+    ];
 
 	protected function signStr($aInputData, $aNeedColumns = []) {
 		$sSignStr = '';
@@ -127,45 +144,24 @@ class PaymentYONGFUWY extends BasePlatform {
 	/**
 	 * 充值请求表单数据组建
 	 *
-	 * @param $oPaymentPlatform
-	 * @param $oPaymentAccount
-	 * @param $oDeposit
-	 * @param $oBank
-	 * @param $sSafeStr
-	 *
-	 * @return array
-	 * version
-	 * productId
-	 * transId
-	 * merNo
-	 * orderDate
-	 * orderNo
-	 * notifyUrl
-	 * transAmt
-	 * bankCode
-	 * commodityName
-	 * signature
-	 * requestNo+productId+transId+merNo+orderNo+transAmt+bankCode+key
-	 * requestNo + transId + merNo
-	 * 2017-07-06-14-13-26-384
 	 */
-	public function & compileInputData($oPaymentPlatform, $oPaymentAccount, $oDeposit, $oBank, & $sSafeStr) {
-		$aData = [
-				'requestNo' => date('YmdHis',strtotime($oDeposit->created_at)),
-				'productId' => $this->productId,
-				'transId' => $this->transId,
-				'merNo' => $oPaymentAccount->account,
-				'orderNo' => $oDeposit->order_no,
-				'transAmt' => $oDeposit->amount * 100,
-				'bankCode' => $oBank ? $oBank->identifier : null,
-				'notifyUrl' => $oPaymentPlatform->notify_url,
-				'version' => $this->version,
-				'orderDate' => date('Ymd',strtotime($oDeposit->created_at)),
-				'commodityName' => $this->commodityName,
-		];
-		$aData['signature'] = $sSafeStr = $this->compileSign($oPaymentAccount, $aData,$this->signNeedColumns);
-		return $aData;
-	}
+    public function & compileInputData($oPaymentPlatform, $oPaymentAccount, $oDeposit, $oBank, & $sSafeStr) {
+        $aSignData = [
+            'pay_memberid' => $oPaymentAccount->account,
+            'pay_orderid' => $oDeposit->order_no,
+            'pay_amount' => $oDeposit->amount,
+            'pay_applydate' => date('ymdHis',strtotime($oDeposit->created_at)),
+            'pay_channelCode' => $this->channelCode,
+            'pay_notifyurl' => $oPaymentPlatform->notify_url,
+            //if pay_bankcode = null,then client select the method to pay
+//            'pay_bankcode' => $oDeposit->amount,
+//            '' => $oDeposit->username,
+//            'P_Description' => $oBank->identifier    //ICBC,there s an self cash end in the page
+        ];
+        $aSignData['pay_md5sign'] = $this->compileSign($oPaymentAccount, $aSignData, $this->signNeedColumns);
+        $aData = $aSignData;
+        return $aData;
+    }
 
 	/**
 	 * 查询签名组建
@@ -188,14 +184,10 @@ class PaymentYONGFUWY extends BasePlatform {
 	public function & compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo) {
 		$oDeposit = UserDeposit::getDepositByNo($sOrderNo);
 		$aData = [
-				'requestNo' => date('YmdHis',strtotime($oDeposit->created_at)),
-				'version' => $this->version,
-				'transId' => $this->queryTransId,
-				'merNo' => $oPaymentAccount->account,
-				'orderDate' => date("Ymd", strtotime($oDeposit->created_at)),
-				'orderNo' => $sOrderNo,
+				'pay_memberid' => $oPaymentAccount->account,
+				'pay_orderid' => $oDeposit->order_no
 		];
-		$aData['signature'] = $this->compileQuerySign($oPaymentAccount, $aData,$this->querySignNeedColumns);
+		$aData['pay_md5sign'] = $this->compileQuerySign($oPaymentAccount, $aData,$this->querySignNeedColumns);
 		return $aData;
 	}
 
@@ -206,15 +198,7 @@ class PaymentYONGFUWY extends BasePlatform {
 	 * @return array
 	 */
 	public function & compileQueryReturnData($oPaymentAccount,$aResponse) {
-		$aData = [
-				'requestNo' => $aResponse['requestNo'],
-				'transId' => $aResponse['transId'],
-				'merNo' => $aResponse['merNo'],
-				'orderNo' => $aResponse['orderNo'],
-				'origRespCode' => $aResponse['origRespCode'],
-				'respCode' => $aResponse['respCode'],
-		];
-		$sign = $this->compileQuerySign($oPaymentAccount, $aData);
+		$sign = $this->compileQuerySign($oPaymentAccount, $aResponse,$this->queryResultSignNeedColumns);
 
 		return $sign;
 	}
@@ -226,7 +210,7 @@ class PaymentYONGFUWY extends BasePlatform {
 	 * @param PaymentPlatform $oPaymentPlatform
 	 * @param string          $sOrderNo
 	 * @param string          $sServiceOrderNo
-	 * @param array           & $aResonses
+	 * @param array           & $aResponses
 	 *
 	 * @return integer | boolean
 	 *  1: Success
@@ -236,7 +220,7 @@ class PaymentYONGFUWY extends BasePlatform {
 	 *  -4: No Order
 	 *  -5: Unpay
 	 */
-	public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResonses) {
+	public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResponses) {
 		$aDataQuery = $this->compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo);
 		$sDataQuery = http_build_query($aDataQuery);
 		$ch         = curl_init();
@@ -252,33 +236,24 @@ class PaymentYONGFUWY extends BasePlatform {
 			print curl_error($ch);
 		}
 		curl_close($ch); //关闭curl链接
-		$aResonses = json_decode($sResponse, true);
+		$aResponses = json_decode($sResponse, true);
 		//返回格式不对
-		if(!$aResonses || !isset($aResonses['respCode'])){
+		if(!$aResponses || !isset($aResponses['respCode'])){
 			return self::PAY_QUERY_PARSE_ERROR;
 		}
-		if($aResonses['respCode'] == '0028' || trim($aResonses['respDesc']) == "无法查到原交易"){
-			return self::PAY_NO_ORDER;
-		}
-		if($aResonses['respCode'] == '0000'){
-			switch ($aResonses['origRespCode']) {
-				case '0000':
-					//支付返回成功校验签名
-					$sSign = $this->compileQueryReturnData($oPaymentAccount,$aResonses);
-					if ($sSign != $aResonses['signature']) {
+		//todo
+        switch($aResponses['returncode']){
+            case '00' :
+                    $sSign = $this->compileQueryReturnData($oPaymentAccount,$aResponses);
+					if ($sSign != $aResponses['signature']) {
 						return self::PAY_SIGN_ERROR;
-						break;
 					}
 					return self::PAY_SUCCESS;
-					break;
-				default:
-					//其他状态归结为未支付
-					return self::PAY_UNPAY;
-					break;
-			}
-		}else{
-			return self::PAY_QUERY_FAILED;
-		}
+
+            default:
+                return self::PAY_QUERY_FAILED;
+
+        }
 	}
 
 	/**
@@ -300,10 +275,10 @@ class PaymentYONGFUWY extends BasePlatform {
 	public static function & compileCallBackData($aBackData, $sIp) {
 		$oDeposit = Deposit::getDepositByNo($aBackData['orderNo']);
 		$aData = [
-				'order_no' => $aBackData['orderNo'],
-				'service_order_no' => $oDeposit ? date('YmdHis',strtotime($oDeposit->created_at)) : $aBackData['merNo'],
-				'merchant_code' => $aBackData['merNo'],
-				'amount' => $aBackData['transAmt'] / 100,
+				'order_no' => $oDeposit->order_no,
+				'service_order_no' => $oDeposit ? date('YmdHis',strtotime($oDeposit->created_at)) : $aBackData['orderid'],
+				'merchant_code' => $aBackData['memberid'],
+				'amount' => $aBackData['amount'] / 100,
 				'ip' => $sIp,
 				'status' => DepositCallback::STATUS_CALLED,
 				'post_data' => var_export($aBackData, true),
@@ -317,8 +292,8 @@ class PaymentYONGFUWY extends BasePlatform {
 
 	public static function & getServiceInfoFromQueryResult(& $aResponses) {
 		$data = [
-				'service_order_no' => $aResponses['requestNo'],
-				'order_no' => $aResponses['orderNo'],
+				'service_order_no' => $aResponses['orderid'],
+				'order_no' => $aResponses['orderid'],
 		];
 		return $data;
 	}

@@ -10,6 +10,6 @@ class PaymentHUITIANWX extends PaymentHUITIANWY {
 
     protected $paymentName= 'huitianwx';
     public $qrDirName = 'huitianwx';
-    protected $type = 21;
+    protected $payment_type = 21;
 
 }

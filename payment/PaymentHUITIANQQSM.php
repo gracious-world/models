@@ -6,11 +6,11 @@
  * Date: 18-1-26
  * Time: 下午4:46
  */
-class PaymentHUITIANQQSM extends PaymentHUITIANWY {
+class PaymentHUITIANQQSM extends BasePlatform {
     protected $paymentName= 'huitianqqsm';
     // 保存二维码
     public $saveQr = false;
-    public $isqrcode = 'Y';
+//    public $isqrcode = 'Y';
     public $qrDirName = 'huitianqq';
     // 回调处理成功时，输出的字符串
     public $successMsg = 'ErrCode=0';
@@ -32,7 +32,7 @@ class PaymentHUITIANQQSM extends PaymentHUITIANWY {
     // 回调数据中,平台订单时间变量名
     public $serviceOrderTimeColumn = '';
     // 银行类型 QQ 扫码：89  微信扫码：21
-    protected $type = 89;
+    protected $payment_type = 89;
     // 回调数据中,银行交易时间变量名
     public $bankTimeColumn = "";
     // 参加签名的变量数组
@@ -46,7 +46,7 @@ class PaymentHUITIANQQSM extends PaymentHUITIANWY {
     ];
 
     // 通知需要验签的数组
-    public $compileReturnColumnsForServer = [
+    public $compileNofifySignColumns = [
         'P_UserID',
         'P_OrderID',
         'P_CardID',
@@ -157,12 +157,11 @@ class PaymentHUITIANQQSM extends PaymentHUITIANWY {
             'P_CardID' => '',
             'P_CardPass' => '',
             'P_FaceValue' => $oDeposit->amount,
-            'P_ChannelID' => $this->type,
+            'P_ChannelID' => $this->payment_type,
             'P_Price' => $oDeposit->amount,
             'P_Notic' => $oDeposit->username,
             'P_Result_URL' => $oPaymentPlatform->notify_url,
             'P_Notify_URL' => $oPaymentPlatform->notify_url,
-
         ];
         $aSignData['P_PostKey'] = $this->compileSign($oPaymentAccount, $aSignData, $this->signNeedColumns);
         $aData = $aSignData;
@@ -191,7 +190,7 @@ class PaymentHUITIANQQSM extends PaymentHUITIANWY {
             'P_Notic' => $aInputData['P_Notic'],
             //'P_ErrMsg' => $aInputData['P_ErrMsg'],
         ];
-        return $this->compileSign($oPaymentAccount, $aData, $this->compileReturnColumnsForServer);
+        return $this->compileSign($oPaymentAccount, $aData, $this->compileNofifySignColumns);
     }
 
     /**
@@ -208,7 +207,7 @@ class PaymentHUITIANQQSM extends PaymentHUITIANWY {
         $aData = [
             'P_UserId' => $oPaymentAccount->account,
             'P_OrderId' => $sOrderNo,
-            'P_ChannelId' => $this->type,
+            'P_ChannelId' => $this->payment_type,
             'P_CardId' => '',
             'P_FaceValue' => $oDeposit->amount,
         ];
@@ -224,7 +223,7 @@ class PaymentHUITIANQQSM extends PaymentHUITIANWY {
      * @param PaymentPlatform $oPaymentPlatform
      * @param string          $sOrderNo
      * @param string          $sServiceOrderNo
-     * @param array           & $aResonses
+     * @param array           & $aResponses
      *
      * @return integer | boolean
      *  1: Success
@@ -234,7 +233,7 @@ class PaymentHUITIANQQSM extends PaymentHUITIANWY {
      *  -4: No Order
      *  -5: Unpay
      */
-    public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResonses) {
+    public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResponses) {
         $aDataQuery = $this->compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo);
         $sDataQuery = http_build_query($aDataQuery);
         $url = $oPaymentPlatform->getQueryUrl($oPaymentAccount);
