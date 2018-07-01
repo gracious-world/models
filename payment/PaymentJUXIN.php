@@ -318,7 +318,7 @@ class PaymentJUXIN extends BasePlatform {
 	public static function & getServiceInfoFromQueryResult(& $aResponses) {
 		$data = [
 				'service_order_no' => $aResponses['requestNo'],
-				'order_no' => $aResponses['orderNo'],
+			'order_no' => $aResponses['orderNo'],
 		];
 		return $data;
 	}

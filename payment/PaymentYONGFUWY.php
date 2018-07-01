@@ -7,28 +7,29 @@
  *
  */
 class PaymentYONGFUWY extends BasePlatform {
-	protected $paymentName= 'huitianwy';
+
+	public $paymentName= 'huitianwy';
     // 保存二维码
-    protected $saveQr = false;
-    protected $isqrcode = 0;
-    protected $qrDirName = 'huitianwy';
+    public $saveQr = false;
+    public $isqrcode = 0;
+    public $qrDirName = 'huitianwy';
     // 回调处理成功时，输出的字符串
-    protected $successMsg = 'SUCCESS';
+    public $successMsg = 'SUCCESS';
     // 签名变量名
-    protected $signColumn = 'pay_md5sign';
+    public $signColumn = 'pay_md5sign';
     // 帐号变量名
-    protected $accountColumn = 'pay_memberid';
+    public $accountColumn = 'pay_memberid';
     // 订单号变量名
-    protected $orderNoColumn = 'pay_orderid';
+    public $orderNoColumn = 'pay_orderid';
     // 渠道方订单号变量名
-    protected $paymentOrderNoColumn = 'pay_orderid'; //通知结果中没有平台订单号，用商户号代替
+    public $paymentOrderNoColumn = 'pay_orderid'; //通知结果中没有平台订单号，用商户号代替
     // 回调的数据中，可用于检验是否成功的变量名
-    protected $successColumn = 'P_ErrCode';
+    public $successColumn = 'P_ErrCode';
     // 回调的数据中,标志成功的变量值
-    protected $successValue = '0';
+    public $successValue = '0';
     // 金额变量名
-    protected $amountColumn = 'pay_amount';
-    protected $channelCode = 'BANK';
+    public $amountColumn = 'pay_amount';
+    public $channelCode = 'BANK';
 
     // 回调数据中,平台订单时间变量名
     public $serviceOrderTimeColumn = 'datetime';
@@ -53,6 +54,7 @@ class PaymentYONGFUWY extends BasePlatform {
         'pay_amount',
         'pay_applydate',
         'pay_channelCode',
+        'pay_bankcode'
     ];
 
     // 通知需要验签的数组
@@ -83,7 +85,7 @@ class PaymentYONGFUWY extends BasePlatform {
 		}
 		foreach ($aNeedColumns as $sColumn) {
 			if (isset($aInputData[$sColumn]) && $aInputData[$sColumn] != '') {
-				$sSignStr .= $aInputData[$sColumn];
+                $sSignStr .= $sColumn . '^' . $aInputData[$sColumn];
 			}
 		}
 		return $sSignStr;
@@ -101,7 +103,7 @@ class PaymentYONGFUWY extends BasePlatform {
 	public function compileSign($oPaymentAccount, $aInputData, $aNeedKeys = []) {
 
 		$sSignStr = $this->signStr($aInputData, $aNeedKeys);
-		$sSignStr .= $oPaymentAccount->safe_key;
+        $sSignStr .= 'key=' . $oPaymentAccount->safe_key;
 
 		return md5($sSignStr);
 	}
@@ -115,10 +117,7 @@ class PaymentYONGFUWY extends BasePlatform {
 	 * @return string
 	 */
 	public function compileQuerySign($oPaymentAccount, $aInputData, $aNeedKeys = []) {
-		$sSignStr = $this->signStr($aInputData, $aNeedKeys);
-		$sSignStr .= $oPaymentAccount->safe_key;	
-
-		return md5($sSignStr);
+		return $this->compileSign($oPaymentAccount,$aInputData,$aNeedKeys);
 	}
 
 	/**
@@ -153,10 +152,11 @@ class PaymentYONGFUWY extends BasePlatform {
             'pay_channelCode' => $this->channelCode,
             'pay_notifyurl' => $oPaymentPlatform->notify_url,
             //if pay_bankcode = null,then client select the method to pay
-//            'pay_bankcode' => $oDeposit->amount,
+//            'pay_bankcode' => 'icbc',
 //            '' => $oDeposit->username,
 //            'P_Description' => $oBank->identifier    //ICBC,there s an self cash end in the page
         ];
+
         $aSignData['pay_md5sign'] = $this->compileSign($oPaymentAccount, $aSignData, $this->signNeedColumns);
         $aData = $aSignData;
         return $aData;
@@ -196,7 +196,7 @@ class PaymentYONGFUWY extends BasePlatform {
 	 * @param $aResponse
 	 * @return array
 	 */
-	public function & compileQueryReturnData($oPaymentAccount,$aResponse) {
+	public function & compileQueryReturnSign($oPaymentAccount, $aResponse) {
 		$sign = $this->compileQuerySign($oPaymentAccount, $aResponse,$this->queryResultSignNeedColumns);
 
 		return $sign;
@@ -243,7 +243,7 @@ class PaymentYONGFUWY extends BasePlatform {
 		//todo
         switch($aResponses['returncode']){
             case '00' :
-                    $sSign = $this->compileQueryReturnData($oPaymentAccount,$aResponses);
+                    $sSign = $this->compileQueryReturnSign($oPaymentAccount,$aResponses);
 					if ($sSign != $aResponses['signature']) {
 						return self::PAY_SIGN_ERROR;
 					}

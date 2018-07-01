@@ -6,7 +6,7 @@
  * @author lucky
  *
  */
-class PaymentYONGFUWXSM extends PaymentYONGFUWY
+class PaymentYONGFUWXSM extends PaymentYONGFUQQ
 {
 
     protected $paymentName= 'yongfuwxsm';
