@@ -10,7 +10,7 @@ class PaymentYONGFUZFB extends PaymentYONGFUWY
 {
 
     protected $paymentName= 'yongfuzfb';
-    protected $payment_type = 'ALIPAY';
+    protected $channelCode = 'ALIPAY';
 
 }
 

@@ -7,29 +7,28 @@
  *
  */
 class PaymentYONGFUWY extends BasePlatform {
-
-
 	protected $paymentName= 'huitianwy';
     // 保存二维码
-    public $saveQr = false;
-    public $isqrcode = 0;
-    public $qrDirName = 'huitianwy';
+    protected $saveQr = false;
+    protected $isqrcode = 0;
+    protected $qrDirName = 'huitianwy';
     // 回调处理成功时，输出的字符串
-    public $successMsg = 'SUCCESS';
+    protected $successMsg = 'SUCCESS';
     // 签名变量名
-    public $signColumn = 'pay_md5sign';
+    protected $signColumn = 'pay_md5sign';
     // 帐号变量名
-    public $accountColumn = 'pay_memberid';
+    protected $accountColumn = 'pay_memberid';
     // 订单号变量名
-    public $orderNoColumn = 'pay_orderid';
+    protected $orderNoColumn = 'pay_orderid';
     // 渠道方订单号变量名
-    public $paymentOrderNoColumn = 'pay_orderid'; //通知结果中没有平台订单号，用商户号代替
+    protected $paymentOrderNoColumn = 'pay_orderid'; //通知结果中没有平台订单号，用商户号代替
     // 回调的数据中，可用于检验是否成功的变量名
-    public $successColumn = 'P_ErrCode';
+    protected $successColumn = 'P_ErrCode';
     // 回调的数据中,标志成功的变量值
-    public $successValue = '0';
+    protected $successValue = '0';
     // 金额变量名
-    public $amountColumn = 'pay_amount';
+    protected $amountColumn = 'pay_amount';
+    protected $channelCode = 'BANK';
 
     // 回调数据中,平台订单时间变量名
     public $serviceOrderTimeColumn = 'datetime';
