@@ -9,7 +9,7 @@
 class PaymentYONGFUWXSM extends PaymentYONGFUQQ
 {
 
-    protected $paymentName= 'yongfuwxsm';
-    protected $channelCode = 'WECHAT';
+    public $paymentName= 'yongfuwxsm';
+    public $channelCode = 'BARCODE';
 }
 

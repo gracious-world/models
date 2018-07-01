@@ -8,7 +8,7 @@
  */
 class PaymentYONGFUWY extends BasePlatform {
 
-	public $paymentName= 'huitianwy';
+	public $paymentName= 'younfuwy';
     // 保存二维码
     public $saveQr = false;
     public $isqrcode = 0;
@@ -54,7 +54,8 @@ class PaymentYONGFUWY extends BasePlatform {
         'pay_amount',
         'pay_applydate',
         'pay_channelCode',
-        'pay_bankcode'
+//        'pay_bankcode',
+        'pay_notifyurl'
     ];
 
     // 通知需要验签的数组
@@ -85,7 +86,7 @@ class PaymentYONGFUWY extends BasePlatform {
 		}
 		foreach ($aNeedColumns as $sColumn) {
 			if (isset($aInputData[$sColumn]) && $aInputData[$sColumn] != '') {
-                $sSignStr .= $sColumn . '^' . $aInputData[$sColumn];
+                $sSignStr .= $sColumn . '^' . $aInputData[$sColumn] . '&';
 			}
 		}
 		return $sSignStr;
@@ -94,6 +95,10 @@ class PaymentYONGFUWY extends BasePlatform {
 	/**
 	 * sign组建
 	 *
+     * pay_memberid^YM051141&pay_orderid^18181844635b38a33508df7&pay_amount^100.00&pay_applydate^20180701174733&pay_channelCode^BANK&pay_notifyurl^http://35.201.235.209/dnotify/yongfuwy&key=79060d9cf859558059c05f524d613c11
+     * pay_memberid^YM0001&pay_orderid^40288184626d555601626d5556f60001&pay_amount^100&pay_applydate^20180328235421&pay_channelCode^BANK&pay_notifyurl^
+    http://localhost/notice&key=345677565t765sasa
+     *
 	 * @param       $oPaymentAccount
 	 * @param       $aInputData
 	 * @param array $aNeedKeys
@@ -104,8 +109,8 @@ class PaymentYONGFUWY extends BasePlatform {
 
 		$sSignStr = $this->signStr($aInputData, $aNeedKeys);
         $sSignStr .= 'key=' . $oPaymentAccount->safe_key;
-
-		return md5($sSignStr);
+//        var_dump(__FILE__,__LINE__,$sSignStr);
+		return strtoupper(md5($sSignStr));
 	}
 
 	/**
@@ -148,7 +153,7 @@ class PaymentYONGFUWY extends BasePlatform {
             'pay_memberid' => $oPaymentAccount->account,
             'pay_orderid' => $oDeposit->order_no,
             'pay_amount' => $oDeposit->amount,
-            'pay_applydate' => date('ymdHis',strtotime($oDeposit->created_at)),
+            'pay_applydate' => date('YmdHis',strtotime($oDeposit->created_at)),
             'pay_channelCode' => $this->channelCode,
             'pay_notifyurl' => $oPaymentPlatform->notify_url,
             //if pay_bankcode = null,then client select the method to pay
