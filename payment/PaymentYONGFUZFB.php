@@ -11,6 +11,5 @@ class PaymentYONGFUZFB extends PaymentYONGFUQQ
 
     public $paymentName = 'yongfuzfb';
     public $channelCode = 'ALIPAY';
-
 }
 

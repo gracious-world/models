@@ -9,7 +9,7 @@
 class PaymentYONGFUWY extends BasePlatform {
 
 	public $paymentName= 'younfuwy';
-	public $isMoblie = false;
+	public $isMobile = false;
     // 保存二维码
     public $saveQr = false;
     public $isqrcode = 0;
