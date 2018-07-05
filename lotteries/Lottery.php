@@ -30,19 +30,19 @@ class Lottery extends BaseModel
     const LOTTERY_JCZQ_ID = 31;
 
     /**
-     * 芒果11选5
+     * 汇众11选5
      * 11-5 lottery id
      */
     const LOTTERY_11_5 = 14;
 
     /**
-     * 芒果秒秒彩 id
+     * 汇众秒秒彩 id
      * mango ssc id
      */
     const LOTTERY_SSC_ID = 26;
 
     /**
-     * 芒果11选5秒秒彩
+     * 汇众11选5秒秒彩
      * 11-5 ssc id
      */
     const LOTTERY_11_5_SSC_ID = 43;

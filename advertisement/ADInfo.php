@@ -150,7 +150,7 @@ class AdInfo extends BaseModel {
     }
 
     /**
-     * 取得金芒果首页相关的的信息图片
+     * 取得汇众国际首页相关的的信息图片
      *
      * @author　okra
      * @date 2017-5-10
