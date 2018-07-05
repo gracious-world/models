@@ -393,7 +393,7 @@ class TeamLotteryWayProfit extends BaseModel {
 
         $sFunction      = 'add' . ucfirst(String::camel($sType));
         $bSucc          = true;
-        //适应金芒果的模型只需要给直接上级加数据
+        //适应汇众国际的模型只需要给直接上级加数据
         if ($oUser->parent_id) {
             $oUserProfit = self::getTeamProfitObject($sDate, $oUser->parent_id, $iLotteryId, $iWayId);
             if (!is_object($oUserProfit)) {

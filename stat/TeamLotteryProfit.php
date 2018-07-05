@@ -375,7 +375,7 @@ class TeamLotteryProfit extends BaseModel {
     public static function updateProfitData($sType, $sDate, $iLotteryId, $oUser, $fAmount) {
         $sFunction      = 'add' . ucfirst(String::camel($sType));
         $bSucc          = true;
-        //适应金芒果的模型只需要给直接上级加团队彩种数据
+        //适应汇众国际的模型只需要给直接上级加团队彩种数据
         if ($oUser->parent_id) {
             $oUserProfit = self::getTeamProfitObject($sDate, $oUser->parent_id, $iLotteryId);
             if (!is_object($oUserProfit)) {

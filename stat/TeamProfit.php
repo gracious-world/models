@@ -364,7 +364,7 @@ class TeamProfit extends BaseModel {
     public static function updateProfitData($sType, $sDate, $oUser, $fAmount) {
         $sFunction      = 'add' . ucfirst(String::camel($sType));
         $bSucc          = true;
-        //适应金芒果的模型只需要给直接上级加代理盈亏数据
+        //适应汇众国际的模型只需要给直接上级加代理盈亏数据
         if ($oUser->parent_id) {
             $oUserProfit = self::getTeamProfitObject($sDate, $oUser->parent_id);
             if (!is_object($oUserProfit)) {
