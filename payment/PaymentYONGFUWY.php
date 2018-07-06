@@ -23,11 +23,11 @@ class PaymentYONGFUWY extends BasePlatform {
     // 订单号变量名
     public $orderNoColumn = 'pay_orderid';
     // 渠道方订单号变量名
-    public $paymentOrderNoColumn = 'pay_orderid'; //通知结果中没有平台订单号，用商户号代替
+    public $paymentOrderNoColumn = 'orderid'; //通知结果中没有平台订单号，用商户号代替
     // 回调的数据中，可用于检验是否成功的变量名
-    public $successColumn = 'P_ErrCode';
+    public $successColumn = 'returncode';
     // 回调的数据中,标志成功的变量值
-    public $successValue = '0';
+    public $successValue = 2;
     // 金额变量名
     public $amountColumn = 'pay_amount';
     public $channelCode = 'BANK';
@@ -59,6 +59,14 @@ class PaymentYONGFUWY extends BasePlatform {
         'pay_notifyurl'
     ];
 
+    public $returnSignNeedColumns=[
+        'amount',
+        'datetime',
+        'memberid',
+        'orderid',
+        'returncode'
+        ];
+
     // 通知需要验签的数组
     public $compileNofifySignColumns = [
         'memberid',
@@ -76,11 +84,25 @@ class PaymentYONGFUWY extends BasePlatform {
 
     //查询结果需要验签的数组
     public $queryResultSignNeedColumns = [
-        'pay_memberid',
-        'pay_orderid',
+        'amount',
+        'datetime',
+        'memberid',
+        'orderid',
+        'returncode'
     ];
 
-	protected function signStr($aInputData, $aNeedColumns = []) {
+    public function __construct()
+    {
+        $path=Route::getCurrentRoute()->getPath();
+        if(preg_match('/dnotify|depositapi/simU',$path)) {
+            $this->signColumn='sign';
+            $this->accountColumn='memberid';
+            $this->orderNoColumn='orderid';
+            $this->amountColumn='amount';
+        }
+    }
+
+    protected function signStr($aInputData, $aNeedColumns = []) {
 		$sSignStr = '';
 		if (!$aNeedColumns) {
 			$aNeedColumns = array_keys($aInputData);
@@ -123,6 +145,7 @@ class PaymentYONGFUWY extends BasePlatform {
 	 * @return string
 	 */
 	public function compileQuerySign($oPaymentAccount, $aInputData, $aNeedKeys = []) {
+        $this->signColumn = 'sign';
 		return $this->compileSign($oPaymentAccount,$aInputData,$aNeedKeys);
 	}
 
@@ -135,12 +158,11 @@ class PaymentYONGFUWY extends BasePlatform {
 	 */
 	public function compileSignReturn($oPaymentAccount, $aInputData) {
 		$aData = [
-			'merNo' => $oPaymentAccount->account,
-			'orderNo' => $aInputData['orderNo'],
-			'transAmt' => $aInputData['transAmt'],
-			'respCode' => $aInputData['respCode'],
-			'payId' => $aInputData['payId'],
-			'payTime' => $aInputData['payTime'],
+            'amount' => $aInputData['amount'],
+            'datetime' => $aInputData['datetime'],
+			'memberid' => $oPaymentAccount->account,
+			'orderid' => $aInputData['orderid'],
+            'returncode'=>$aInputData['returncode']
 		];
 		return $this->compileSign($oPaymentAccount, $aData, $this->returnSignNeedColumns);
 	}
@@ -243,14 +265,14 @@ class PaymentYONGFUWY extends BasePlatform {
 		curl_close($ch); //关闭curl链接
 		$aResponses = json_decode($sResponse, true);
 		//返回格式不对
-		if(!$aResponses || !isset($aResponses['respCode'])){
+		if(!$aResponses || !isset($aResponses['returncode'])){
 			return self::PAY_QUERY_PARSE_ERROR;
 		}
 		//todo
         switch($aResponses['returncode']){
             case '00' :
                     $sSign = $this->compileQueryReturnSign($oPaymentAccount,$aResponses);
-					if ($sSign != $aResponses['signature']) {
+					if ($sSign != $aResponses['sign']) {
 						return self::PAY_SIGN_ERROR;
 					}
 					return self::PAY_SUCCESS;
@@ -278,12 +300,12 @@ class PaymentYONGFUWY extends BasePlatform {
 	 * 'signature' => string '7f3669e6f4639fe2d032766e68eeb5cf' (length=32)
 	 */
 	public static function & compileCallBackData($aBackData, $sIp) {
-		$oDeposit = Deposit::getDepositByNo($aBackData['orderNo']);
+		$oDeposit = Deposit::getDepositByNo($aBackData['orderid']);
 		$aData = [
 				'order_no' => $oDeposit->order_no,
 				'service_order_no' => $oDeposit ? date('YmdHis',strtotime($oDeposit->created_at)) : $aBackData['orderid'],
 				'merchant_code' => $aBackData['memberid'],
-				'amount' => $aBackData['amount'] / 100,
+				'amount' => $aBackData['amount'],
 				'ip' => $sIp,
 				'status' => DepositCallback::STATUS_CALLED,
 				'post_data' => var_export($aBackData, true),
@@ -303,12 +325,4 @@ class PaymentYONGFUWY extends BasePlatform {
 		return $data;
 	}
 
-	/**
-     * 从数组中取得金额
-     * @param array $data
-     * @return float
-     */
-    public function getPayAmount($data) {
-        return $data[$this->amountColumn] / 100;
-    }
 }

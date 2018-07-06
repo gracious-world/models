@@ -387,7 +387,7 @@ class TeamLotteryProfit extends BaseModel {
         return $bSucc;
 
 
-        /*金苹果逻辑 需要给上级 上级的上级等加团队彩种数据
+        /*汇众国际逻辑 需要给上级 上级的上级等加团队彩种数据
         $bSucc          = true;
         $aForeFathers   = $oUser->forefather_ids ? explode(',', $oUser->forefather_ids) : [];//给父级加
         !$oUser->is_agent or $aForeFathers[] = $oUser->id;//自己是代理也要给自己加
