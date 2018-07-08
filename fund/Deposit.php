@@ -747,6 +747,10 @@ class Deposit extends BaseModel {
                         case 'formatted_status':
                             $a[] = $oDeposit->formatted_status;
                             break;
+
+                        case 'platform_main':
+                            $a[] = mb_substr($oDeposit->platform,0,2);
+                            break;
                         case 'bank':
                             $a[] = is_null($oDeposit->$key) ? '' : array_get($aBanks, $oDeposit->$key);
                             break;
