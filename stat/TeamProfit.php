@@ -458,14 +458,17 @@ class TeamProfit extends BaseModel {
         $oQuery = static::select(DB::raw('username,user_id,is_tester, sum(profit) total_profit, sum(turnover) total_turnover, sum(prize) total_prize, sum(commission) total_commission, sum(bonus) total_bonus, sum(lose_commission) total_lose_commission'));
         if (!$bIsLevel) {
             $oQuery = $oQuery->where('date', '>=', $sBeginDate)->where('date', '<=', $sEndDate)->whereNull('parent_user_id');
-        }else{
-            $oQuery = $oQuery->where('date', '>=', $sBeginDate)->where('date', '<=', $sEndDate)->where('user_level', '=', 0);
         }
+
+        $oQuery = $oQuery->where('date', '>=', $sBeginDate)->where('date', '<=', $sEndDate);
+
 
         if ($aUserIds) {
             $oQuery = $bIn ? $oQuery->whereIn('user_id', $aUserIds) : $oQuery->whereNotIn('user_id', $aUserIds);
         }
         $oQuery  = $oQuery->groupBy('username')->orderBy('user_id');
+
+//        $oQuery = $oQuery->where('is_tester',false);
         $aResult = $oQuery->get();
 
         return $aResult;

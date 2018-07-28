@@ -995,6 +995,7 @@ class User extends BaseModel implements UserInterface, RemindableInterface {
             $sErrmsg = $oUser->getValidationErrorString();
             return false;
         }
+
         if (!$oUser->createAccount()) {
             $iErrno = User::REGISTER_ERROR_CREATE_ACCOUNT_FAILED;
             return false;
@@ -1004,16 +1005,16 @@ class User extends BaseModel implements UserInterface, RemindableInterface {
             return false;
         }
 
-        if($oUser->is_agent) {
-            if (!$bSucc = $oUser->initDividendRuleSet()) {
-                $iErrno = User::REGISTER_ERROR_CREATE_DIVIDEND_RULE;
-                return false;
-            }
-            if(!$bSucc=$oUser->initSalarySettingSet()){
-                $iErrno = User::REGISTER_ERROR_CREATE_SALARY_SETTING;
-                return false;
-            }
-        }
+//        if($oUser->is_agent) {
+//            if (!$bSucc = $oUser->initDividendRuleSet()) {
+//                $iErrno = User::REGISTER_ERROR_CREATE_DIVIDEND_RULE;
+//                return false;
+//            }
+//            if(!$bSucc=$oUser->initSalarySettingSet()){
+//                $iErrno = User::REGISTER_ERROR_CREATE_SALARY_SETTING;
+//                return false;
+//            }
+//        }
 
         if ($iParentId) {
             $bSucc = ZeroCommissionSet::createRecord($oUser);

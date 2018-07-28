@@ -10,18 +10,35 @@ class SalarySettings extends BaseModel {
     const STATUS_ACCEPTED_NOT = 0;
     const STATUS_ACCEPTED_YES = 1;
     const STATUS_ACCEPTED_DENY = 2;
-
+public static $amountAccuracy = 2;
     public static $rules          = [
+        'user_id'  => 'required',
         'username' => 'required|max:32',
+//        'parent_id' => 'required',
+//        'parent' =>'required',
+//        'forefather_ids'=>'required',
+//        'forefathers'=>'required',
         'turnover' => 'required',
-        'salary'   => 'required'
+//        'salary'   => 'required',
+        'total_rate' => 'required|numeric|max:1|min:0',
+        'rate' => 'required|numeric|max:1|min:0'
     ];
+
     protected $table              = 'salary_settings';
+    public static $titleColumn     = 'username';
+
     public static $columnForList  = [
+        'id',
+        'parent',
+        'forefathers',
         'username',
         'turnover',
-        'salary'
+        'total_rate',
+        'rate',
+        'created_at',
+        'updated_at'
     ];
+
     public $orderColumns          = [
         'turnover' => 'asc'
     ];
@@ -30,7 +47,8 @@ class SalarySettings extends BaseModel {
         'user_id',
         'username',
         'turnover',
-        'salary',
+        'total_rate',
+        'rate',
         'created_at',
         'updated_at',
     ];
@@ -40,6 +58,16 @@ class SalarySettings extends BaseModel {
         'salary'   => 'friendly_salary'
     ];
 
+    public static $ignoreColumnsInEdit = [
+        'user_id',
+        'forefather_ids',
+        'parent_id',
+        'parent',
+        'forefathers'
+    ];
+
+
+
     public static $aBasicSalarySettings = [
           1000 => 10,
           10000 => 50,
@@ -48,14 +76,17 @@ class SalarySettings extends BaseModel {
 
     protected function beforeValidate()
     {
-        $oUser = User::getUserByUsername($this->username);
-        if (!$oUser) {
-            $this->validationErrors['user_id']=__('_user.missing-user');
-            return false;
+        $iCount=static::where('username',$this->username)->count();
+        if(!$this->id) {
+            if ($iCount >= 5) {
+                $this->validationErrors->add('count', __('_salarysettings.count-exceed-limit'));
+                return false;
+            }
         }
-        $this->user_id = $oUser->id;
         return parent::beforeValidate();
     }
+
+
     /**
      * 获取投注额和日薪对应关系数据
      *
@@ -64,13 +95,23 @@ class SalarySettings extends BaseModel {
      *
      * @return mixed
      */
-    public static function getSalarySettingsByUserId($iUserId,$iStatus=1) {
-        $aSalarySettings = static::select('turnover', 'salary')
-            ->where('user_id', $iUserId)
-            ->where('is_accepted', $iStatus)
-            ->orderBy('turnover', 'desc')
-            ->get()
-            ->toArray();
+    public static function getSalaryTotalRateByUserObj($oUser) {
+        $is_top_agent = !(bool)$oUser->parent_id;
+        $iUserId = $oUser->id;
+        if($is_top_agent){
+            //for all top agent
+            $oSalarySettings = static::where('username', 'topagent')
+                ->first();
+        }else {
+            $oSalarySettings = static::where('user_id', $iUserId)
+                ->first();
+        }
+        return  $oSalarySettings ? $oSalarySettings->total_rate : 0;
+//        return array_column($oSalarySettings, 'rate', 'turnover');
+    }
+
+    public static function getTopAgentSalarySettings() {
+        $aSalarySettings = static::$aBasicSalarySettings;
         return array_column($aSalarySettings, 'salary', 'turnover');
     }
 
@@ -92,11 +133,35 @@ class SalarySettings extends BaseModel {
         }
         foreach ($aSalarySettings as $key => $v) {
             if ($key <= $iTurnover) {
-                $iDailySalary = $v;
+                $iDailySalary = $iTurnover*$v;
                 break;
             }
         }
         return $iDailySalary;
+    }
+ /**
+     * 根据投注额计算用户日工资
+     *
+     * @author Garin
+     * @date 2016-11-09
+     *
+     * @param $aSalarySettings 日工资发放配置数组
+     * @param $iTurnover 用户投注额
+     *
+     * @return int
+     */
+    public static function getSalaryRateByTurnover($aSalarySettings, $iTurnover) {
+        $iDailySalary = 0;
+        if (empty($aSalarySettings) || empty($iTurnover)) {
+            return $iDailySalary;
+        }
+        foreach ($aSalarySettings as $key => $v) {
+            if ($key <= $iTurnover) {
+                $iDailySalaryRate = $v;
+                break;
+            }
+        }
+        return $iDailySalaryRate;
     }
 
     protected function getFriendlyTurnoverAttribute() {
@@ -128,6 +193,10 @@ class SalarySettings extends BaseModel {
 
         DB::connection()->commit();
         return static::where('user_id',$oUser->id)->get();
+    }
+
+    protected function setParentIdAttribute($iParentId) {
+        $this->attributes['parent_id'] = $iParentId;
     }
 
 }

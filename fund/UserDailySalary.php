@@ -221,7 +221,10 @@ class UserDailySalary extends BaseModel {
      *
      * @return mixed
      */
-    public static function createUserDailySalary($oUser, $aUserProfits, $sDate, $aExtraData, $oRole = false) {
+    public static function createUserDailySalary($oUser, $aUserProfits, $sDate, $aExtraData, $oRole = false, & $sErrMsg = null) {
+
+        DB::connection()->beginTransaction();
+        $oAccount = Account::lock($oUser->account_id, $iLocker);
         $oUserDailySalary = new static();
 
         $oUserDailySalary->user_id    = $oUser->id;
@@ -234,10 +237,9 @@ class UserDailySalary extends BaseModel {
         $oUserDailySalary->date       = $sDate;
         $oUserDailySalary->year       = Date('Y', strtotime($sDate));
         $oUserDailySalary->month      = Date('m', strtotime($sDate));
-        $oUserDailySalary->status     = static::SALARY_STATUS_CREATED;
+        $oUserDailySalary->status     = static::SALARY_STATUS_SENT;
         $oUserDailySalary->note       = isset($aExtraData['note']) ? $aExtraData['note'] : '';
         $oUserDailySalary->extra_data = isset($aExtraData['extra_data']) ? $aExtraData['extra_data'] : '';
-
         //有角色信息，保存下来
         if ($oRole) {
             $oUserDailySalary->role_id   = $oRole->id;
@@ -246,7 +248,45 @@ class UserDailySalary extends BaseModel {
 
         //只记录信息，不用锁钱包了，用于该字段不能为空，给个默认值0
         $oUserDailySalary->account_id = 0;
-        return $oUserDailySalary->save();
+        $bReturn = $oUserDailySalary->save();
+        if (!$bReturn) {
+                $oUserDailySalary = new UserDailySalary;
+                $sErrMsg=" Error: UserId " . $oUser->id . " save daily salary failed:" . $oUserDailySalary->getValidationErrorString();
+//                $this->writeLog(" Error: UserId " . $iUserId . " save daily salary failed:" . $oUserDailySalary->getValidationErrorString());
+                DB::connection()->rollback();
+            }
+
+        if (empty($oAccount)) {
+            DB::connection()->rollback();
+            $sErrMsg = __("basic.no-account-found");
+            return false;
+//            return $this->goBackToIndex("error", __("basic.no-account-found"));
+        }
+
+        if (Transaction::where("extra_data", '=', $oUserDailySalary->extra_data)->first()) {
+            $sErrMsg = __("_userdailysalary.already-send-salary");
+            DB::connection()->rollback();
+            return false;
+        }
+
+        $aExtraData = [
+            'note' => $oUserDailySalary->note,
+            'extra_data' => $oUserDailySalary->extra_data,
+        ];
+
+        $iReturn = Transaction::addTransaction($oUser, $oAccount, TransactionType::TYPE_PROMOTIANAL_BONUS, $oUserDailySalary->salary, $aExtraData);
+        Account::unlock($oAccount->id, $iLocker);
+
+        if ($iReturn != Transaction::ERRNO_CREATE_SUCCESSFUL) {
+            DB::connection()->rollback();
+            $sErrMsg=sprintf("user_daily_salary add to transaction failed:user_id=%d date=%s extra_data=%s", $oUser->id, $oUserDailySalary->date, $oUserDailySalary->extra_data);
+//            $this->writeLog(sprintf("user_daily_salary add to transaction failed:user_id=%d date=%s extra_data=%s", $oUser->id, $oUserDailySalary->date, $oUserDailySalary->extra_data));
+            return false;
+        }
+
+        DB::connection()->commit();
+
+       return true;
     }
 
     /**

@@ -240,6 +240,23 @@ class UserProfit extends BaseModel {
     }
 
     /**
+     * 获取指定用户用户盈亏
+     *
+     * @param int $iUserId 用户id
+     *
+     * @return float        用户盈亏
+     */
+    public static function getUsersTotalProfit($sBeginDate, $sEndDate, $iUserId) {
+        $aUserProfits = static::getUserProfitByDate($sBeginDate, $sEndDate, $iUserId);
+        $aProfits = [];
+        foreach ($aUserProfits as $data) {
+            $aProfits[] = $data['profit'];
+        }
+        $fTotalProfit = array_sum($aProfits);
+        return $fTotalProfit;
+    }
+
+    /**
      * 获取指定用户用户返点
      *
      * @param int $iUserId 用户id
@@ -660,4 +677,29 @@ class UserProfit extends BaseModel {
     public static function getProfitData($aUserIds,$sBeginDate, $sEndDate){
         return static::whereIn('user_id',$aUserIds)->whereBetween('date',[$sBeginDate,$sEndDate])->get();
     }
+
+    /**
+     * 获取总代 所有下级指定时间的盈亏数据总和
+     * @param string $sBeginDate    开始时间
+     * @param string $sEndDate       结束时间
+     */
+    public static function & getUserProfitByTopAgentDate($sBeginDate, $sEndDate, $iParentId , $aUserIds=null) {
+        $oQuery = static::select(DB::raw('sum(profit) total_profit, sum(turnover) total_turnover, sum(prize) total_prize, sum(commission) total_commission, sum(bonus) total_bonus, sum(lose_commission) total_lose_commission'))
+            ->where('date', '>=', $sBeginDate)->where('date', '<=', $sEndDate);
+
+        $oQuery = $oQuery->whereRaw(" (find_in_set(?,user_forefather_ids) or user_id= ? )", [$iParentId,$iParentId]);
+
+        if ($aUserIds) {
+            $oQuery =  $oQuery->whereIn('user_id', $aUserIds);
+        }
+
+
+//        $oQuery = $oQuery->orderBy('user_id');
+//        $oQuery = $oQuery->where('is_tester',false);
+        $aResult = $oQuery->first();
+
+        return $aResult;
+    }
+
+
 }

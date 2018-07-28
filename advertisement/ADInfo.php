@@ -160,11 +160,7 @@ class AdInfo extends BaseModel {
      * @return object 活动的图片相关列表 $oAdInfoList
      */
     protected function getAdInfoList($id, $sType, $iIsClosed) {
-        if ($sType == '') {
             $oAdInfoList = AdInfo::Where('ad_location_id', $id)->Where('is_closed', $iIsClosed)->orderBy('sequence', 'desc')->get();
-        } else {
-            $oAdInfoList = AdInfo::Where('ad_location_id', $id)->Where('type', $sType)->Where('is_closed', $iIsClosed)->orderBy('sequence', 'desc')->get();
-        }
 
         return $oAdInfoList;
     }

@@ -271,7 +271,7 @@ class CmsArticle extends BaseModel {
     }
 
     public static function getArticlesByCaregoryId($iCategoryId) {
-        return CmsArticle::where('category_id', '=', $iCategoryId)->orderBy("sequence")->get();
+        return CmsArticle::where('category_id', '=', $iCategoryId)->where('status',static::STATUS_AUDITED)->orderBy("sequence")->get();
     }
 
     public function getUpdatedAtDayAttribute() {

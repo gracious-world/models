@@ -217,8 +217,8 @@ class WayGroup extends BaseModel {
      * @param int       $fMaxPrize
      * @return array &
      */
-    public static function & getWayInfos($iSeriesId, & $aPrizes, $fMaxPrize = null) {
-        $aWayGroups = static::getWayGroups($iSeriesId, false);
+    public static function & getWayInfos($iSeriesId, & $aPrizes, $fMaxPrize = null, $iTerminalId = 1, $bForBet = false ) {
+        $aWayGroups = static::getWayGroups($iSeriesId, $bForBet, $iTerminalId);
 //        pr($aWayGroups);
 //        exit;
         for ($i = 0; $i < count($aWayGroups); $i++) {
@@ -255,10 +255,10 @@ class WayGroup extends BaseModel {
      * @param int       $fMaxPrize
      * @return array &
      */
-    public static function & getWayInfosForPrizeList($iSeriesId, & $aPrizes) {
+    public static function & getWayInfosForPrizeList($iSeriesId, & $aPrizes, $iTerminalId = 1) {
 //        pr($aPrizes);
 //        exit;
-        $aWayGroups = static::getWayGroups($iSeriesId, false);
+        $aWayGroups = static::getWayGroups($iSeriesId, false, $iTerminalId);
 //        pr($aWayGroups);
 //        exit;
         for ($i = 0; $i < count($aWayGroups); $i++) {
@@ -313,7 +313,9 @@ class WayGroup extends BaseModel {
                 foreach ($aWays as $k => $aWay) {
                     $oSeriesWay                 = SeriesWay::find($aWay['series_way_id']);
                     $aWays[$k]['basic_methods'] = $oSeriesWay->getAttribute('basic_methods');
+
                 }
+
 //                foreach($aWays as $k => $aWay){
 ////                    echo $aWay['series_way_id'],',';
 //                    $oSeriesWay = SeriesWay::find($aWay['series_way_id']);
@@ -337,4 +339,35 @@ class WayGroup extends BaseModel {
         return $aWayGroups;
     }
 
+    public static function & getWayGroupPrizeSettings($iSeriesId, $aPrizes, $iTerminalId = 1,$fMaxPrize=null) {
+        $aWayGroups = static::getWayGroups($iSeriesId, true, $iTerminalId);
+        for ($i = 0; $i < count($aWayGroups); $i++) {
+            $aSubGroups = & $aWayGroups[$i]['children'];
+            for ($j = 0; $j < count($aSubGroups); $j++) {
+                $aWays = & $aSubGroups[$j]['children'];
+                foreach ($aWays as $k => $aWay) {
+                    $oSeriesWay                 = SeriesWay::find($aWay['series_way_id']);
+                    $aWays[$k]['basic_methods'] = $oSeriesWay->getAttribute('basic_methods');
+                    $sBasicMethodIds = $oSeriesWay->getAttribute('basic_methods');
+
+                    $aBasicMethodIds = explode(',', $sBasicMethodIds);
+                    $aBasicMethodIds = array_unique($aBasicMethodIds);
+
+                    $aWayPrizes      = [];
+                    foreach ($aBasicMethodIds as $iBasicMethodId) {
+                        $aWayPrizes[] = $aPrizes[$iBasicMethodId]['prize'];
+                    }
+
+                    if ($fMaxPrize) {
+                        $aWays[$k]['prize']        = min($aWayPrizes);
+                        $aWays[$k]['max_multiple'] = intval($fMaxPrize / min($aWayPrizes));
+                    } else {
+                        $aWays[$k]['prize']        = implode(',', $aWayPrizes);
+                        $aWays[$k]['max_multiple'] = 0;
+                    }
+                }
+            }
+        }
+        return $aWayGroups;
+    }
 }
