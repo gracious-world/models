@@ -113,10 +113,13 @@ class UserProject extends Project {
             $iErrno = self::ERRNO_BET_ERROR_LOW_BALANCE;
             return false;
         }
+
         $rules = & static::compileRules($this);
+
         if (!$bNeedIP) {
             unset($rules['ip'], $rules['proxy_ip']);
         }
+
         if (!$this->save($rules)) {
 //            pr($this->validationErrors->toArray());
             $iErrno = self::ERRNO_BET_ERROR_SAVE_ERROR;

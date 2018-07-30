@@ -175,7 +175,7 @@ class UserProfit extends BaseModel {
         if (!is_null($sEndDate)) {
             $oQuery->where('date', '<=', $sEndDate);
         }
-        $aUserProfits = $oQuery->get(['turnover', 'profit', 'commission', 'deposit']);
+        $aUserProfits = $oQuery->get(['turnover', 'profit', 'commission', 'deposit','prize']);
         $data = [];
         $i = 0;
         foreach ($aUserProfits as $oUserProfit) {
@@ -183,6 +183,8 @@ class UserProfit extends BaseModel {
             $data[$i]['profit'] = $oUserProfit->profit;
             $data[$i]['commission'] = $oUserProfit->commission;
             $data[$i]['deposit'] = $oUserProfit->deposit;
+            $data[$i]['bonus'] = $oUserProfit->bonus;
+            $data[$i]['prize'] = $oUserProfit->prize;
             $i++;
         }
         return $data;
@@ -683,7 +685,7 @@ class UserProfit extends BaseModel {
      * @param string $sBeginDate    开始时间
      * @param string $sEndDate       结束时间
      */
-    public static function & getUserProfitByTopAgentDate($sBeginDate, $sEndDate, $iParentId , $aUserIds=null) {
+    public static function & getUserProfitByTopAgentDate($sBeginDate, $sEndDate, $iParentId , $aUserIds=null, $sUsername=null) {
         $oQuery = static::select(DB::raw('sum(profit) total_profit, sum(turnover) total_turnover, sum(prize) total_prize, sum(commission) total_commission, sum(bonus) total_bonus, sum(lose_commission) total_lose_commission'))
             ->where('date', '>=', $sBeginDate)->where('date', '<=', $sEndDate);
 
@@ -691,6 +693,10 @@ class UserProfit extends BaseModel {
 
         if ($aUserIds) {
             $oQuery =  $oQuery->whereIn('user_id', $aUserIds);
+        }
+
+        if($sUsername){
+            $oQuery = $oQuery->where('parent_user', 'like', '%' . $sUsername . '%');
         }
 
 

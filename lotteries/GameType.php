@@ -39,7 +39,7 @@ class GameType extends BaseModel {
         'name',
         'identifier',
         'plat_id',
-        'rate_basis',
+//        'rate_basis',
         'created_at',
         'updated_at',
         'status'
@@ -61,7 +61,7 @@ class GameType extends BaseModel {
         'name',
         'identifier',
         'plat_id',
-        'rate_basis',
+//        'rate_basis',
         'status',
         'created_at'
     ];
@@ -81,7 +81,7 @@ class GameType extends BaseModel {
     ];
     public static $htmlSelectColumns         = [
 //        'rate_basis' => 'aValidRateBasis',
-        'plat_id' => 'aPlats',
+//        'plat_id' => 'aPlats',
         'status' => 'aStatus',
     ];
     public static $htmlTextAreaColumns       = [];
@@ -97,7 +97,7 @@ class GameType extends BaseModel {
     public static $rules                     = [
         'name'       => 'required',
         'identifier' => 'required',
-        'rate_basis' => 'required',
+//        'rate_basis' => 'required',
         'plat_id' => 'integer',
         'status' => 'integer',
     ];
