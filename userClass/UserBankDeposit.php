@@ -25,7 +25,7 @@ class UserBankDeposit extends BankDeposit {
         return uniqid(mt_rand());
     }
 
-    private static function & compileData( $oUser, $oBank, $fAmount, $oPayment = null, $aBankcardInfo = null, $sPayerName = null) {
+    private static function & compileData( $oUser, $oBank, $fAmount, $oPayment = null, $aBankcardInfo = null, $sPayerName = null, $fAmount=null) {
         if ($oUser->parent_id) {
             $aForeFathers   = explode(',', $oUser->forefathers);
             $aForeFatherIds = explode(',', $oUser->forefather_ids);
@@ -58,7 +58,8 @@ class UserBankDeposit extends BankDeposit {
             'postscript'          => self::compilePostscript(),
             'platform_id'         => $oPayment->id,
             'platform'            => $oPayment->name,
-            'platform_identifier' => $oPayment->identifier
+            'platform_identifier' => $oPayment->identifier,
+            'amount'              => $fAmount
 
         ];
 
@@ -68,8 +69,8 @@ class UserBankDeposit extends BankDeposit {
         return $aDepositInfo;
     }
 
-    public static function addDeposit($oUser, $oBank = null, $fAmount = null, $oPayment = null, $aBankcardInfo = null, $sPayerName=null) {
-        $data     = & self::compileData($oUser, $oBank, $fAmount, $oPayment, $aBankcardInfo, $sPayerName);
+    public static function addDeposit($oUser, $oBank = null, $fAmount = null, $oPayment = null, $aBankcardInfo = null, $sPayerName=null, $fAmount=null) {
+        $data     = & self::compileData($oUser, $oBank, $fAmount, $oPayment, $aBankcardInfo, $sPayerName, $fAmount);
         $oDeposit = new static($data);
         if ($bSucc = $oDeposit->save()){
             $oDeposit->setNewFlag();
