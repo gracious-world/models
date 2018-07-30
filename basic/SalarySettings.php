@@ -10,7 +10,7 @@ class SalarySettings extends BaseModel {
     const STATUS_ACCEPTED_NOT = 0;
     const STATUS_ACCEPTED_YES = 1;
     const STATUS_ACCEPTED_DENY = 2;
-public static $amountAccuracy = 2;
+public static $amountAccuracy = 3;
     public static $rules          = [
         'user_id'  => 'required',
         'username' => 'required|max:32',

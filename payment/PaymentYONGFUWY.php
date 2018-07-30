@@ -93,7 +93,10 @@ class PaymentYONGFUWY extends BasePlatform {
 
     public function __construct()
     {
-        $path=Route::getCurrentRoute()->getPath();
+        $oRoute=Route::getCurrentRoute();
+
+        $path = $oRoute?$oRoute->getPath():null;
+
         if(preg_match('/dnotify|depositapi/simU',$path)) {
             $this->signColumn='sign';
             $this->accountColumn='memberid';

@@ -372,12 +372,45 @@ class UserProject extends Project {
 //        return $aCommissions;
 //    }
 
-    //计算佣金 根据奖金组
+ /*   //计算佣金 根据奖金组
     protected function & compileCommissions() {
         $aCommissions    = [];
         if ($aSelfCommission = $this->compileSelfCommission()) {
             $aCommissions[] = $aSelfCommission;
         }
+        if (!$this->user_forefather_ids) {
+            return $aCommissions;
+        }
+        $aFores       = $aUserIds     = explode(',', $this->user_forefather_ids);
+        array_push($aUserIds, $this->user_id);
+        $iGroupId     = UserPrizeSet::getGroupId($this->user_id, $this->lottery_id, $sGroupName);
+        $aPrizeGroups = UserPrizeSet::getPrizeGroupOfUsers($aFores, $this->lottery_id);
+        $iForeCount   = count($aFores);
+        foreach ($aFores as $i => $iUserId) {
+            $iUpAgentGroup  = $aPrizeGroups[$iUserId];
+            $iDownUserGroup = ($i < $iForeCount - 1) ? $aPrizeGroups[$aFores[$i + 1]] : $sGroupName;
+            if ($iUpAgentGroup <= $iDownUserGroup) {
+                continue;
+            }
+            $oFore          = User::find($iUserId);
+            $aCommissions[] = $this->compileSingleCommission($oFore, $iUpAgentGroup - $iDownUserGroup);
+        }
+//        pr($aCommissions);
+//        exit;
+        return $aCommissions;
+    }*/
+
+    /**
+     * 计算佣金
+     *
+     * @param array $aCommissions &
+     * @return void
+     */
+    protected function & compileCommissions() {
+        $aCommissions    = [];
+//        if ($aSelfCommission = $this->compileSelfCommission()) {
+//            $aCommissions[] = $aSelfCommission;
+//        }
         if (!$this->user_forefather_ids) {
             return $aCommissions;
         }
