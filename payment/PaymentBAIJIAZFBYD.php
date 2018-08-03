@@ -21,7 +21,7 @@ class PaymentBAIJIAZFBYD extends BasePlatform {
 	public $amountColumn           = 'orderPrice';
 
 	public $appId                  = 'cs001';
-	public $appSecret                 = 'FGxcBhkvtOKKZcG0g7Hnpg%3D%3D';
+	public $appSecret              = 'FGxcBhkvtOKKZcG0g7Hnpg%3D%3D';
     public $serviceType            = 'ALIPAY_H5PAY';
 
 	public $bizCode                = "H0001";
