@@ -20,11 +20,12 @@ class PaymentBAIJIAZFBYD extends BasePlatform {
 	public $successValue           =  200;
 	public $amountColumn           = 'orderPrice';
 
-	public $appId                  = 'cs001';
-	public $appSecret              = 'FGxcBhkvtOKKZcG0g7Hnpg%3D%3D';
+	public $version                =  100;
+	public $appId                  =  15280904306;
+	public $appSecret              = 'Rb31UbR57DhOQ%2F2B%2BkH8u%2FNy5ljxiaKf';
     public $serviceType            = 'ALIPAY_H5PAY';
 
-	public $bizCode                = "H0001";
+	public $bizCode                = "S0001";
     public $goodsName              = "bet";
     public $goodsTag               = "betTag";
     public $terminalIp             = "35.201.235.209";
@@ -87,7 +88,7 @@ class PaymentBAIJIAZFBYD extends BasePlatform {
 		}
 		foreach ($aNeedColumns as $sColumn) {
 			if (isset($aInputData[$sColumn]) && $aInputData[$sColumn] != '') {
-				$sSignStr .= $aInputData[$sColumn];
+				$sSignStr .= $sColumn.'='.$aInputData[$sColumn].'&';
 			}
 		}
 		return $sSignStr;
@@ -103,11 +104,13 @@ class PaymentBAIJIAZFBYD extends BasePlatform {
 	 * @return string
 	 */
 	public function compileSign($oPaymentAccount, $aInputData, $aNeedKeys = []) {
-
+        ksort($aInputData);
+        sort($aNeedKeys);
 		$sSignStr = $this->signStr($aInputData, $aNeedKeys);
-		$sSignStr .= $oPaymentAccount->safe_key;
-
-		return md5($sSignStr);
+		$sSignStr .= "key=".$oPaymentAccount->safe_key;
+//        var_dump($sSignStr);
+//        exit;
+		return strtoupper(md5($sSignStr));
 	}
 
 
@@ -154,20 +157,22 @@ class PaymentBAIJIAZFBYD extends BasePlatform {
 	 */
 	public function & compileInputData($oPaymentPlatform, $oPaymentAccount, $oDeposit, $oBank, & $sSafeStr) {
 		$aData = [
-                "version" => "100",//接口版本[参与签名]
+                "version" => $this->version,//接口版本[参与签名]
                 "appId" => $this->appId,//应用ID[参与签名]
-                "appSecret" => $oPaymentAccount->safe_key,//应用密钥[参与签名]
+                "appSecret" => $this->appSecret,//应用密钥[参与签名]
                 "merId" => $oPaymentAccount->account,//商户号[参与签名]
                 "bizCode" => $this->bizCode,//业务编号[参与签名]
 		"serviceType" => $this->serviceType,//服务类别[参与签名]
 		"orderNo" => $oDeposit->order_no,//订单号[参与签名]
         "orderPrice" => $oDeposit->amount,//交易金额(元)
+//            "orderPrice" => 100,//交易金额(元)
+//            "orderPrice" => 10,//交易金额(元)
         "goodsName" => $this->goodsName,//商品名称
         "goodsTag" => $this->goodsTag,//商品标签
 		"orderTime" =>  date('Y-m-d H:i:s',strtotime($oDeposit->created_at)),//订单时间
         "terminalIp" => $this->terminalIp,//终端IP
-        "returnUrl" => $oPaymentAccount->return_url, //前端返回页面
-        "notifyUrl" => $oPaymentAccount->notify_url,//通知地址
+        "returnUrl" => $oPaymentPlatform->return_url, //前端返回页面
+        "notifyUrl" => $oPaymentPlatform->notify_url,//通知地址
 //        "settleCycle" => "D0"
 		];
 		$aData['sign'] = $sSafeStr = $this->compileSign($oPaymentAccount, $aData,$this->signNeedColumns);
