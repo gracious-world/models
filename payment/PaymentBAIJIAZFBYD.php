@@ -14,71 +14,58 @@ class PaymentBAIJIAZFBYD extends BasePlatform {
 
 	public $successMsg             = 'SUCCESS';
 	public $signColumn             = 'sign';
-	public $accountColumn          = 'merId';
-	public $orderNoColumn          = 'orderNo';
-	public $successColumn          = 'retCode';
-	public $successValue           =  200;
-	public $amountColumn           = 'orderPrice';
+	public $accountColumn          = 'memberid';
+	public $orderNoColumn          = 'orderid';
+	public $paymentOrderNoColumn   = 'orderid';
+	public $successColumn          = 'returncode';
+    public $bankTimeColumn         = 'datetime';
 
-	public $version                =  100;
-	public $appId                  =  15280904306;
-	public $appSecret              = 'Rb31UbR57DhOQ%2F2B%2BkH8u%2FNy5ljxiaKf';
-    public $serviceType            = 'ALIPAY_H5PAY';
-
-	public $bizCode                = "S0001";
-    public $goodsName              = "bet";
-    public $goodsTag               = "betTag";
-    public $terminalIp             = "35.201.235.209";
-
+	public $successValue           =  '00';
+	public $amountColumn           = 'amount';
+    public $payBankCode            =  904;
 
 	protected $paymentName = 'baijiazfbyd';
 
     /**
      * @var array
-     * 	"version" => "100",//接口版本[参与签名]
-    "appId" => $APP_KEY,//应用ID[参与签名]
-    "appSecret" => $APP_SECRET,//应用密钥[参与签名]
-    "merId" => $MERCHANT_ID,//商户号[参与签名]
-    "bizCode" = > "C0001",//业务编号[参与签名]
-    "serviceType" => "WEIXIN_F2F_PAY",//服务类别[参与签名]
-    "orderPrice" => "10000",//交易金额(元)
-    "orderNo" => "订单号商户自己传"//订单号[参与签名]
+     *
      */
 	//交易签名所需字段
 	public $signNeedColumns = [
-        "version",//接口版本[参与签名]
-        "appId" ,//应用ID[参与签名]
-        "appSecret" ,//应用密钥[参与签名]
-        "merId" ,//商户号[参与签名]
-        "bizCode",//业务编号[参与签名]
-		"serviceType",//服务类别[参与签名]
-        "orderPrice",//交易金额(元)
-		"orderNo"//订单号[参与签名]
+     'pay_memberid',
+     'pay_orderid',
+     'pay_amount',
+        'pay_applydate',
+        'pay_bankcode',
+        'pay_notifyurl',
+        'pay_callbackurl'
 	];
 
 	//查询签名字段
 	public $querySignNeedColumns = [
-			'version',
-			'appId',
-			'appSecret',
-			'merId',
-        'bizCode',
-        'orderNo'
+        'pay_memberid',
+        'pay_orderid'
 	];
 
     //query return sign columns
 	public $queryReturnSignNeedColumns = [
-			'status',
-			'retCode',
-			'merOrderNo',
-			'orderPrice'
+		'memberid',
+        'orderid',
+        'amount',
+        'time_end',
+        'transaction_id',
+        'returncode',
+        'trade_state',
 	];
+
 	//通知签名字段
 	public $returnSignNeedColumns = [
-			'status',
-			'retCode',
-			'merOrderNo',
-			'orderPrice',
+        'memberid',
+        'orderid',
+        'amount',
+        'datetime',
+        'returncode',
+        'transaction_id',
 	];
 
 	protected function signStr($aInputData, $aNeedColumns = []) {
@@ -108,8 +95,7 @@ class PaymentBAIJIAZFBYD extends BasePlatform {
         sort($aNeedKeys);
 		$sSignStr = $this->signStr($aInputData, $aNeedKeys);
 		$sSignStr .= "key=".$oPaymentAccount->safe_key;
-//        var_dump($sSignStr);
-//        exit;
+//		var_dump($sSignStr);exit;
 		return strtoupper(md5($sSignStr));
 	}
 
@@ -128,54 +114,20 @@ class PaymentBAIJIAZFBYD extends BasePlatform {
 	/**
 	 * 充值请求表单数据组建
 	 *
-	 * @param $oPaymentPlatform
-	 * @param $oPaymentAccount
-	 * @param $oDeposit
-	 * @param $oBank
-	 * @param $sSafeStr
-    "version" => "100",//接口版本[参与签名]
-    "appId" => $APP_KEY,//应用ID[参与签名]
-    "appSecret" => $APP_SECRET,//应用密钥[参与签名]
-    "merId" => $MERCHANT_ID,//商户号[参与签名]
-    "bizCode" = > "C0001",//业务编号[参与签名]
-    "serviceType" => "WEIXIN_F2F_PAY",//服务类别[参与签名]
-    "orderNo" => "订单号商户自己传",//订单号[参与签名]
-    "orderPrice" => "10000",//交易金额(元)
-    "goodsName" => "充值卡",//商品名称
-    "goodsTag" => "TAG",//商品标签
-    "orderTime" => $datestr,//订单时间
-    "terminalIp" => "120.36.46.178",//终端IP
-    "returnUrl" => "http://pay.baidu.com",//前端返回页面
-    "notifyUrl" => "http://pay.baidu.com/notify",//通知地址
-    "settleCycle"=>"D0"      *
-     * 商户号：88882018070810001127
-    APPID:cs001
-    支付KEY:FGxcBhkvtOKKZcG0g7Hnpg%3D%3D		（验证使用）
-    支付秘钥：48d643efa82a43f1ab77d1860e75f18a    （签名使用）
-
-     * @return array
+    * @return array
 	 */
-	public function & compileInputData($oPaymentPlatform, $oPaymentAccount, $oDeposit, $oBank, & $sSafeStr) {
+	public function & compileInputData($oPaymentPlatform, $oPaymentAccount, $oDeposit, $oBank, &$sSafeStr) {
 		$aData = [
-                "version" => $this->version,//接口版本[参与签名]
-                "appId" => $this->appId,//应用ID[参与签名]
-                "appSecret" => $this->appSecret,//应用密钥[参与签名]
-                "merId" => $oPaymentAccount->account,//商户号[参与签名]
-                "bizCode" => $this->bizCode,//业务编号[参与签名]
-		"serviceType" => $this->serviceType,//服务类别[参与签名]
-		"orderNo" => $oDeposit->order_no,//订单号[参与签名]
-        "orderPrice" => $oDeposit->amount,//交易金额(元)
-//            "orderPrice" => 100,//交易金额(元)
-//            "orderPrice" => 10,//交易金额(元)
-        "goodsName" => $this->goodsName,//商品名称
-        "goodsTag" => $this->goodsTag,//商品标签
-		"orderTime" =>  date('Y-m-d H:i:s',strtotime($oDeposit->created_at)),//订单时间
-        "terminalIp" => $this->terminalIp,//终端IP
-        "returnUrl" => $oPaymentPlatform->return_url, //前端返回页面
-        "notifyUrl" => $oPaymentPlatform->notify_url,//通知地址
-//        "settleCycle" => "D0"
+        "pay_memberid" => $oPaymentAccount->account,//商户号[参与签名]
+		"pay_orderid" => $oDeposit->order_no,//订单号[参与签名]
+        "pay_amount" => $oDeposit->amount,//交易金额(元)
+		"pay_applydate" =>  date('Y-m-d H:i:s',strtotime($oDeposit->created_at)),//订单时间
+        "pay_bankcode" => $this->payBankCode,
+        "pay_notifyurl" => $oPaymentPlatform->notify_url,//通知地址
+        "pay_callbackurl" => $oPaymentPlatform->return_url, //前端返回页面
 		];
-		$aData['sign'] = $sSafeStr = $this->compileSign($oPaymentAccount, $aData,$this->signNeedColumns);
+		$aData['pay_md5sign'] = $sSafeStr = $this->compileSign($oPaymentAccount, $aData,$this->signNeedColumns);
+//		var_dump($aData);exit;
 		return $aData;
 	}
 
@@ -186,28 +138,15 @@ class PaymentBAIJIAZFBYD extends BasePlatform {
 	 * @param $sOrderNo
 	 * @param $sServiceOrderNo
 	 *
-	 * @return array
-	 * requestNo=2017041915340519401
-	 * &version=V1.0
-	 * &transId=04
-	 * &merNo=Z00000000000***
-	 * &orderDate=20170419
-	 * &orderNo=16F8C3T868_35907_108
-	 * &signature=1a577e01e3d125003ed0151d3edc3370
-	 * requestNo+transId+merNo+orderNo
 	 *
 	 */
 	public function & compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo) {
 		$oDeposit = UserDeposit::getDepositByNo($sOrderNo);
 		$aData = [
-            "version" => "100",//接口版本[参与签名]
-            "appId" => $this->appId,//应用ID[参与签名]
-            "appSecret" => $this->appSecret,//应用密钥[参与签名]
-            "merId" => $oPaymentAccount->account,//商户号[参与签名]
-            "orderNo" => $oDeposit->order_no,//订单号[参与签名]
-            "bizCode" => $this->bizCode,//业务编号[参与签名]
+            "pay_memberid" => $oPaymentAccount->account,//商户号[参与签名]
+            "pay_orderid" => $oDeposit->order_no,//订单号[参与签名]
 		];
-		$aData['sign'] = $this->compileSign($oPaymentAccount, $aData,$this->querySignNeedColumns);
+		$aData['pay_md5sign'] = $this->compileSign($oPaymentAccount, $aData,$this->querySignNeedColumns);
 		return $aData;
 	}
 
@@ -217,17 +156,8 @@ class PaymentBAIJIAZFBYD extends BasePlatform {
 	 * @param $aResponse
 	 * @return array
 	 */
-	public function & compileQueryReturnData($oPaymentAccount,$aResponse) {
-		$aData = [
-				'status' => $aResponse['requestNo'],
-				'retCode' => $aResponse['transId'],
-				'merOrderNo' => $aResponse['merNo'],
-				'platOrderNo' => $aResponse['orderNo'],
-				'orderPrice' => $aResponse['origRespCode'],
-				'message' => $aResponse['respCode'],
-		];
-		$sign = $this->compileSign($oPaymentAccount, $aData, $this->queryReturnSignNeedColumns);
-
+	public function & compileQueryReturnSign($oPaymentAccount, $aResponse) {
+		$sign = $this->compileSign($oPaymentAccount, $aResponse, $this->queryReturnSignNeedColumns);
 		return $sign;
 	}
 
@@ -265,32 +195,23 @@ class PaymentBAIJIAZFBYD extends BasePlatform {
 		}
 		curl_close($ch); //关闭curl链接
 		$aResponses = json_decode($sResponse, true);
+
 		//返回格式不对
-		if(!$aResponses || !isset($aResponses['status'])){
+		if(!$aResponses || (!isset($aResponses['status']) && !isset($aResponses['returncode']))){
 			return self::PAY_QUERY_PARSE_ERROR;
 		}
-		if($aResponses['status']!='01'){
+
+		if(isset($aResponses['status'])){
 			return self::PAY_QUERY_FAILED;
 		}
-		if($aResponses['retCode'] == 999 || trim($aResponses['errCode']) == "0021"){
-			return self::PAY_NO_ORDER;
-		}
-		if($aResponses['status'] == '01'){
-			switch ($aResponses['retCode']) {
-				case 200:
+		if($aResponses['returncode'] == '00'){
 					//支付返回成功校验签名
-					$sSign = $this->compileQueryReturnData($oPaymentAccount,$aResponses);
-					if ($sSign != $aResponses['sign']) {
-						return self::PAY_SIGN_ERROR;
-						break;
-					}
+//					$sSign = $this->compileQueryReturnSign($oPaymentAccount,$aResponses);
+//					if ($sSign != $aResponses['sign']) {
+//						return self::PAY_SIGN_ERROR;
+//					}
 					return self::PAY_SUCCESS;
-					break;
-				default:
 					//其他状态归结为未支付
-					return self::PAY_UNPAY;
-					break;
-			}
 		}else{
 			return self::PAY_QUERY_FAILED;
 		}
@@ -313,13 +234,11 @@ class PaymentBAIJIAZFBYD extends BasePlatform {
 	 * 'signature' => string '7f3669e6f4639fe2d032766e68eeb5cf' (length=32)
 	 */
 	public static function & compileCallBackData($aBackData, $sIp) {
-		$oDeposit = Deposit::getDepositByNo($aBackData['merOrderNo']);
-
 		$aData = [
-				'order_no' => $aBackData['merOrderNo'],
-				'service_order_no' => $oDeposit ? date('YmdHis',strtotime($oDeposit->created_at)) : $aBackData['merOrderNo'],
-				'merchant_code' => $oDeposit->merchant_code,
-				'amount' => $aBackData['orderPrice'],
+				'order_no' => $aBackData['orderid'],
+				'service_order_no' => $aBackData['transaction_id'],
+				'merchant_code' => $aBackData['memberid'],
+				'amount' => $aBackData['amount'],
 				'ip' => $sIp,
 				'status' => DepositCallback::STATUS_CALLED,
 				'post_data' => var_export($aBackData, true),
@@ -333,8 +252,8 @@ class PaymentBAIJIAZFBYD extends BasePlatform {
 
 	public static function & getServiceInfoFromQueryResult(& $aResponses) {
 		$data = [
-            'service_order_no' => $aResponses['platOrderNo'],
-			'order_no' => $aResponses['orderNo'],
+            'service_order_no' => $aResponses['transaction_id'],
+			'order_no' => $aResponses['orderid'],
 		];
 		return $data;
 	}
