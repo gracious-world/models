@@ -7,7 +7,7 @@
  */
 class PaymentDIANJIANGZFBWAP extends BasePlatform
 {
-
+    const BLOCKSIZE = 16;
 
     public $successMsg = 'SUCCESS';
     public $signColumn = 'sign';
@@ -32,11 +32,11 @@ class PaymentDIANJIANGZFBWAP extends BasePlatform
     public $signNeedColumns = [
         'tradeAmt',
         'merchantId',
-        'bankNo',
         'withdrawType',
         'goodsName',
         'tradeType',
-        'accessPayNo'
+        'accessPayNo',
+        'payNotifyUrl'
     ];
 
 
@@ -57,10 +57,11 @@ class PaymentDIANJIANGZFBWAP extends BasePlatform
             $aNeedColumns = array_keys($aInputData);
         }
         foreach ($aNeedColumns as $sColumn) {
-            if (isset($aInputData[$sColumn]) && $aInputData[$sColumn] != '') {
+            if (isset($aInputData[$sColumn]) && (!empty($aInputData[$sColumn]) || $aInputData[$sColumn] === 0)) {
                 $sSignStr .= $sColumn . '=' . $aInputData[$sColumn] . '&';
             }
         }
+
         return $sSignStr;
     }
 
@@ -79,7 +80,6 @@ class PaymentDIANJIANGZFBWAP extends BasePlatform
         sort($aNeedKeys);
         $sSignStr = $this->signStr($aInputData, $aNeedKeys);
         $sSignStr .= "key=" . $oPaymentAccount->safe_key;
-//		var_dump($sSignStr);exit;
         return strtoupper(md5($sSignStr));
     }
 
@@ -105,7 +105,7 @@ class PaymentDIANJIANGZFBWAP extends BasePlatform
     public function & compileInputData($oPaymentPlatform, $oPaymentAccount, $oDeposit, $oBank, &$sSafeStr)
     {
         $aData = [
-            'tradeAmt' => $oDeposit->amount,
+            'tradeAmt' => $oDeposit->amount ,
             'merchantId' => $oPaymentAccount->account,
             'withdrawType' => 0,
             'goodsName' => 'gamecard',
@@ -117,19 +117,18 @@ class PaymentDIANJIANGZFBWAP extends BasePlatform
         $aData['sign'] = $sSafeStr = $this->compileSign($oPaymentAccount, $aData, $this->signNeedColumns);
 
         ksort($aData);
-        $sEncryptContent = $this->encryptInputData($aData);
+        $sEncryptContent = $this->encryptInputData($aData,$oPaymentAccount);
         $aInputData = [
             'accessId' => $this->accessId,
             'data' => $sEncryptContent
         ];
-//		var_dump($aData);exit;
         return $aInputData;
     }
 
     private function encryptInputData($aData, $oPaymentAccount)
     {
         $sStr = json_encode($aData, JSON_UNESCAPED_UNICODE);
-        $sKey = $this->getAESKey($oPaymentAccount->key);
+        $sKey = $this->getAESKey($oPaymentAccount->safe_key);
         $sEncryptContent = $this->pkcs5_pad($sStr);
         $sEncryptContent = bin2hex(mcrypt_encrypt(MCRYPT_RIJNDAEL_128, $sKey, $sEncryptContent, MCRYPT_MODE_ECB));
         return $sEncryptContent;
@@ -162,9 +161,9 @@ class PaymentDIANJIANGZFBWAP extends BasePlatform
      * ECB_MODE 模式
      * @return string //解密后字符串
      */
-    private function decryptNotifyContent($sEncryptionStr,$oPaymentAccount)
+    public function decryptContent($sEncryptionStr, $oPaymentAccount)
     {
-        $sKey = $this->getAESKey($oPaymentAccount->key);
+        $sKey = $this->getAESKey($oPaymentAccount->safe_key);
         $decrypted = mcrypt_decrypt(MCRYPT_RIJNDAEL_128, $sKey, hex2bin($sEncryptionStr), MCRYPT_MODE_ECB);
         $padSize   = ord(substr($decrypted, -1));
         return substr($decrypted, 0, $padSize * -1);
