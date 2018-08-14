@@ -196,7 +196,7 @@ class PaymentHUITENGWX extends PaymentHUITENG {
      * @param PaymentPlatform $oPaymentPlatform
      * @param string $sOrderNo
      * @param string $sServiceOrderNo
-     * @param array & $aResonses
+     * @param array & $aResponses
      * @return integer | boolean
      *  1: Success
      *  -1: Query Failed
@@ -205,29 +205,29 @@ class PaymentHUITENGWX extends PaymentHUITENG {
      *  -4: No Order
      *  -5: Unpay
      */
-    public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResonses) {
+    public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResponses) {
         $aDataQuery = $this->compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo);
         $sResponse = $this->curl_post($oPaymentPlatform->getQueryUrl($oPaymentAccount), $aDataQuery);
         file_put_contents('/tmp/ht'.$this->smName.'_' . $sOrderNo, $sResponse . "\n", FILE_APPEND);
         if (empty($sResponse)) {
             return self::PAY_QUERY_FAILED;
         }
-        $aResonses = json_decode($sResponse, true);
-        if (!count($aResonses)) {
+        $aResponses = json_decode($sResponse, true);
+        if (!count($aResponses)) {
             return self::PAY_QUERY_PARSE_ERROR;
         }
-        if(isset($aResonses['retCode']) && $aResonses['retCode']=='0004' && $aResonses['retMsg']=='订单信息不存在'){
+        if(isset($aResponses['retCode']) && $aResponses['retCode']=='0004' && $aResponses['retMsg']=='订单信息不存在'){
             return self::PAY_NO_ORDER;
         }
 
-        if ($aResonses['retcode']=='205233' && $aResonses['retmsg'] == '订单不存在') {
+        if ($aResponses['retcode']=='205233' && $aResponses['retmsg'] == '订单不存在') {
             return self::PAY_NO_ORDER;
         }
-        switch ($aResonses['state']) {
+        switch ($aResponses['state']) {
             case '3':
                 //支付返回成功校验签名
-                $sSign = $this->compileQueryReturnData($oPaymentAccount, $aResonses);
-                if ($sSign != $aResonses['signature']) {
+                $sSign = $this->compileQueryReturnData($oPaymentAccount, $aResponses);
+                if ($sSign != $aResponses['signature']) {
                     return self::PAY_SIGN_ERROR;
                 }
                 return self::PAY_SUCCESS;

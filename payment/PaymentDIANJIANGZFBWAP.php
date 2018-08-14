@@ -47,6 +47,7 @@ class PaymentDIANJIANGZFBWAP extends BasePlatform
         'tradeAmt',
         'actualAmt',
         'tradeStatus',
+        'tradeType',
         'payTime'
     ];
 
@@ -105,7 +106,7 @@ class PaymentDIANJIANGZFBWAP extends BasePlatform
     public function & compileInputData($oPaymentPlatform, $oPaymentAccount, $oDeposit, $oBank, &$sSafeStr)
     {
         $aData = [
-            'tradeAmt' => $oDeposit->amount ,
+            'tradeAmt' => (string)($oDeposit->amount * 100),
             'merchantId' => $oPaymentAccount->account,
             'withdrawType' => 0,
             'goodsName' => 'gamecard',
@@ -229,7 +230,7 @@ class PaymentDIANJIANGZFBWAP extends BasePlatform
 
     public function getPayAmount($data)
     {
-        return $data[$this->amountColumn] / 1000;
+        return $data[$this->amountColumn] / 100;
     }
 
 

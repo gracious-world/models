@@ -170,7 +170,7 @@ class PaymentZHIFUWX extends BasePlatform {
      * @param PaymentPlatform $oPaymentPlatform
      * @param string $sOrderNo
      * @param string $sServiceOrderNo
-     * @param array & $aResonses
+     * @param array & $aResponses
      * @return integer | boolean
      *  1: Success
      *  -1: Query Failed
@@ -179,7 +179,7 @@ class PaymentZHIFUWX extends BasePlatform {
      *  -4: No Order
      *  -5: Unpay
      */
-    public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResonses) {
+    public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResponses) {
         !isset($this->dataAll['trade_no']) or $sServiceOrderNo = $this->dataAll['trade_no'];
         $data            = $this->compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo);
         $postDataTmp     = [];
@@ -210,25 +210,25 @@ class PaymentZHIFUWX extends BasePlatform {
         if (!xml_parse_into_struct($resParser, $response, $values, $index)) {   // parse error
             return self::PAY_QUERY_PARSE_ERROR;
         }
-        $aResonses = [];
+        $aResponses = [];
         foreach ($values as $aInfo) {
             if ($aInfo['type'] != 'complete') {
                 continue;
             }
-            $aResonses[strtolower($aInfo['tag'])] = $aInfo['value'];
+            $aResponses[strtolower($aInfo['tag'])] = $aInfo['value'];
         }
-        if ($aResonses['is_success'] == 'F') {      // NO ORDER
+        if ($aResponses['is_success'] == 'F') {      // NO ORDER
             return self::PAY_NO_ORDER;
         }
 
-        $sDinpaySign = $aResonses['sign'];
+        $sDinpaySign = $aResponses['sign'];
 
-        unset($aResonses['sign'], $aResonses['sign_type']);
+        unset($aResponses['sign'], $aResponses['sign_type']);
 
         $aDataQueryCheck = [];
         foreach ($this->signNeedColumnsForQueryCheck as $sColumn) {
-            if (isset($aResonses[$sColumn]) && $aResonses[$sColumn] != '') {
-                $aDataQueryCheck[$sColumn] = $sColumn . '=' . $aResonses[$sColumn];
+            if (isset($aResponses[$sColumn]) && $aResponses[$sColumn] != '') {
+                $aDataQueryCheck[$sColumn] = $sColumn . '=' . $aResponses[$sColumn];
             }
         }
         $signStr = implode('&', $aDataQueryCheck);
@@ -238,7 +238,7 @@ class PaymentZHIFUWX extends BasePlatform {
             return self::PAY_SIGN_ERROR;
         }
 
-        switch ($aResonses['trade_status']) {
+        switch ($aResponses['trade_status']) {
             case 'UNPAY':
                 return self::PAY_UNPAY;
             case 'SUCCESS':

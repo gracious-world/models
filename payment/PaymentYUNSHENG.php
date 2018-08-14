@@ -154,7 +154,7 @@ class PaymentYUNSHENG extends BasePlatform {
      * @param PaymentPlatform $oPaymentPlatform
      * @param string $sOrderNo
      * @param string $sServiceOrderNo
-     * @param array & $aResonses
+     * @param array & $aResponses
      * @return integer | boolean
      *  1: Success
      *  -1: Query Failed
@@ -163,7 +163,7 @@ class PaymentYUNSHENG extends BasePlatform {
      *  -4: No Order
      *  -5: Unpay
      */
-    public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResonses) {
+    public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResponses) {
         $aDataQuery = $this->compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo);
         $sDataQuery = http_build_query($aDataQuery);
         $ch = curl_init();
@@ -194,8 +194,8 @@ class PaymentYUNSHENG extends BasePlatform {
         if($aQueryResonses['Success'] != 1){
             return self::PAY_QUERY_FAILED;
         }
-        $aResonses = $this->processArrayKey($aQueryResonses['Order']);
-        switch ($aResonses['orderstatus']) {
+        $aResponses = $this->processArrayKey($aQueryResonses['Order']);
+        switch ($aResponses['orderstatus']) {
             //将查询结果处于等待支付和支付失败归为未支付
             case 'Waiting':
                 return self::PAY_UNPAY;
@@ -205,8 +205,8 @@ class PaymentYUNSHENG extends BasePlatform {
                 break;
             case 'Success':
                 //支付返回成功校验签名
-                $sSign = $this->compileQueryReturnData($aResonses);
-                if ($sSign != $aResonses['sign']) {
+                $sSign = $this->compileQueryReturnData($aResponses);
+                if ($sSign != $aResponses['sign']) {
                     return self::PAY_SIGN_ERROR;
                     break;
                 }

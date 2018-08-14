@@ -226,7 +226,7 @@ class PaymentJUXIN extends BasePlatform {
 	 * @param PaymentPlatform $oPaymentPlatform
 	 * @param string          $sOrderNo
 	 * @param string          $sServiceOrderNo
-	 * @param array           & $aResonses
+	 * @param array           & $aResponses
 	 *
 	 * @return integer | boolean
 	 *  1: Success
@@ -236,7 +236,7 @@ class PaymentJUXIN extends BasePlatform {
 	 *  -4: No Order
 	 *  -5: Unpay
 	 */
-	public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResonses) {
+	public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResponses) {
 		$aDataQuery = $this->compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo);
 		$sDataQuery = http_build_query($aDataQuery);
 		$ch         = curl_init();
@@ -252,20 +252,20 @@ class PaymentJUXIN extends BasePlatform {
 			print curl_error($ch);
 		}
 		curl_close($ch); //关闭curl链接
-		$aResonses = json_decode($sResponse, true);
+		$aResponses = json_decode($sResponse, true);
 		//返回格式不对
-		if(!$aResonses || !isset($aResonses['respCode'])){
+		if(!$aResponses || !isset($aResponses['respCode'])){
 			return self::PAY_QUERY_PARSE_ERROR;
 		}
-		if($aResonses['respCode'] == '0028' || trim($aResonses['respDesc']) == "无法查到原交易"){
+		if($aResponses['respCode'] == '0028' || trim($aResponses['respDesc']) == "无法查到原交易"){
 			return self::PAY_NO_ORDER;
 		}
-		if($aResonses['respCode'] == '0000'){
-			switch ($aResonses['origRespCode']) {
+		if($aResponses['respCode'] == '0000'){
+			switch ($aResponses['origRespCode']) {
 				case '0000':
 					//支付返回成功校验签名
-					$sSign = $this->compileQueryReturnData($oPaymentAccount,$aResonses);
-					if ($sSign != $aResonses['signature']) {
+					$sSign = $this->compileQueryReturnData($oPaymentAccount,$aResponses);
+					if ($sSign != $aResponses['signature']) {
 						return self::PAY_SIGN_ERROR;
 						break;
 					}

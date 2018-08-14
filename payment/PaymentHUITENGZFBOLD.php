@@ -175,7 +175,7 @@ class PaymentHUITENGZFBOLD extends PaymentHUITENGWX {
      * @param PaymentPlatform $oPaymentPlatform
      * @param string $sOrderNo
      * @param string $sServiceOrderNo
-     * @param array & $aResonses
+     * @param array & $aResponses
      * @return integer | boolean
      *  1: Success
      *  -1: Query Failed
@@ -184,7 +184,7 @@ class PaymentHUITENGZFBOLD extends PaymentHUITENGWX {
      *  -4: No Order
      *  -5: Unpay
      */
-    public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResonses) {
+    public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResponses) {
         $aDataQuery = $this->compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo);
         file_put_contents('/tmp/htzfb_' . $sOrderNo, var_export($aDataQuery, true) . "\n", FILE_APPEND);
 
@@ -193,14 +193,14 @@ class PaymentHUITENGZFBOLD extends PaymentHUITENGWX {
         if (empty($sResponse)) {
             return self::PAY_QUERY_PARSE_ERROR;
         }
-        $aResonses = json_decode($sResponse, true);
-        if (!count($aResonses)) {
+        $aResponses = json_decode($sResponse, true);
+        if (!count($aResponses)) {
             return self::PAY_QUERY_PARSE_ERROR;
         }
-        if (!key_exists('orderStatus', $aResonses)) {
+        if (!key_exists('orderStatus', $aResponses)) {
             return self::PAY_QUERY_PARSE_ERROR;
         }
-        switch ($aResonses['orderStatus']) {
+        switch ($aResponses['orderStatus']) {
             //将查询结果处于等待支付和支付失败归为未支付
             case '00':
                 return self::PAY_UNPAY;
@@ -210,8 +210,8 @@ class PaymentHUITENGZFBOLD extends PaymentHUITENGWX {
                 break;
             case '02':
                 //支付返回成功校验签名
-                $sSign = $this->compileQueryReturnData($oPaymentAccount, $aResonses);
-                if ($sSign != $aResonses['signature']) {
+                $sSign = $this->compileQueryReturnData($oPaymentAccount, $aResponses);
+                if ($sSign != $aResponses['signature']) {
                     return self::PAY_SIGN_ERROR;
                     break;
                 }
