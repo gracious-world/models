@@ -1,60 +1,72 @@
 <?php
 
 /**
- * 聚鑫平台
+ * chuangXin
  *
- * @author lucky
+ * @author sad
  *
  */
-class PaymentYICHONGZFBWAP extends BasePlatform
+class PaymentCXZFBWAP extends BasePlatform
 {
 
     public $successMsg = '{"code": 1}';
     public $signColumn = 'sign';
-    public $accountColumn = 'id';
-    public $orderNoColumn = 'pay_no';
-    public $paymentOrderNoColumn = 'trade_no';
-    public $successColumn = 'status';
+    public $accountColumn = 'partner';
+    public $orderNoColumn = 'ordernumber';
+    public $paymentOrderNoColumn = 'sysnumber';
+    public $successColumn = 'orderstatus';
     public $successValue = 1;
-    public $amountColumn = 'money';
+    public $amountColumn = 'paymoney';
 //	public $bankNoColumn           = 'bankCode';
-    public $serviceOrderTimeColumn = 'paytime';
+    public $serviceOrderTimeColumn = 'endtime';
 
-    public $type = 21;
+    public $banktype = 21;
+    public $version = 1.0;
+    public $method = 'Gt.online.query';
 
-    public $bankTimeColumn = "createtime";
+    public $bankTimeColumn = "paytime";
 
-    protected $paymentName = 'yichongzfbwap';
+    protected $paymentName = 'cxzfbwap';
 
     //交易签名所需字段
     public $signNeedColumns = [
-        'id',
-        'pay_id',                 //这是默认的充值用户 因为我们演示的数据库充值 只有该用户名 如正式使用请为空
-        'price',                    //充值金额
-        'order_no',  //充值订单
-        'timestamp',                  //当前时间戳
-        'type'
+        'version',
+        'method',
+        'partner',
+        'banktype',
+        'paymoney',
+        'ordernumber',
+        'callbackurl',
+        'hrefbackurl',
     ];
 
     public $querySignNeedColumns = [
-        'id',
-        'order_no'
+        'version',
+        'method',
+        'partner',
+        'ordernumber',
+        'sysnumber'
     ];
-
+    public $queryResultSignNeedColumns = [
+        'version',
+        'partner',
+        'ordernumber',
+        'sysnumber',
+        'status',
+        'tradestate',
+        'paymoney',
+        'banktype',
+        'paytime',
+        'endtime'
+    ];
     //通知签名字段
     public $notifySignNeedColumns = [
-        'pay_no',
-        'trade_no',
-        'type',
-        'pay_id',
-        'money',
-        'status',
-        'param',
-        'createtime',
-        'endtime',
-        'paytime',
-        'nonce',
-        'timestamp'
+        'partner',
+        'ordernumber',
+        'orderstatus',
+        'paymoney',
+        'sysnumber',
+        'sign'
     ];
 
     protected function signStr($aInputData, $aNeedColumns = [])
@@ -63,11 +75,11 @@ class PaymentYICHONGZFBWAP extends BasePlatform
         if (!$aNeedColumns) {
             $aNeedColumns = array_keys($aInputData);
         }
-        sort($aNeedColumns);
+//        sort($aNeedColumns);
 //        var_dump($aNeedColumns);exit;
         foreach ($aNeedColumns as $sColumn) {
             if (isset($aInputData[$sColumn]) && $aInputData[$sColumn] != '') {
-                $sSignStr .= $sColumn.'='.urlencode($aInputData[$sColumn]).'&';
+                $sSignStr .= $sColumn . '=' . urlencode($aInputData[$sColumn]) . '&';
             }
         }
         return $sSignStr;
@@ -86,7 +98,7 @@ class PaymentYICHONGZFBWAP extends BasePlatform
     {
 
         $sSignStr = $this->signStr($aInputData, $aNeedKeys);
-        $sSignStr = trim($sSignStr,'&');
+        $sSignStr = trim($sSignStr, '&');
         $sSignStr .= $oPaymentAccount->safe_key;
 //        exit;
         return md5($sSignStr);
@@ -106,6 +118,25 @@ class PaymentYICHONGZFBWAP extends BasePlatform
     }
 
     /**
+     * query sign
+     * notice difference with input sign
+     * @see compileSign
+     *
+     * @param $oPaymentAccount
+     * @param $aInputData
+     * @param array $aNeedKeys
+     * @return string
+     */
+    public function compileQuerySign($oPaymentAccount, $aInputData, $aNeedKeys = [])
+    {
+        $sSignStr = $this->signStr($aInputData, $aNeedKeys);
+        $sSignStr = trim($sSignStr, '&');
+        $sSignStr .= 'key=' . $oPaymentAccount->safe_key;
+//        exit;
+        return md5($sSignStr);
+    }
+
+    /**
      * 充值请求表单数据组建
      *
      * @param $oPaymentPlatform
@@ -119,24 +150,17 @@ class PaymentYICHONGZFBWAP extends BasePlatform
     public function & compileInputData($oPaymentPlatform, $oPaymentAccount, $oDeposit, $oBank, & $sSafeStr)
     {
         $aData = [
-            'id' => $oPaymentAccount->account,
-            'pay_id' => 'hzadmin',                 //这是默认的充值用户 因为我们演示的数据库充值 只有该用户名 如正式使用请为空
-            'price' => $oDeposit->amount,                    //充值金额
-            'order_no' => $oDeposit->order_no,  //充值订单
-            'timestamp' => time(),                  //当前时间戳
-            'type' => 4
+            'version' => $this->version,
+            'method' => $this->method,
+            'partner' => $oPaymentAccount->account,
+            'banktype' => $this->banktype,
+            'paymoney' => $oDeposit->amount,
+            'ordernumber' => $oDeposit->order_no,
+            'callbackurl' => $oPaymentPlatform->notify_url,
         ];
 
-//        $aData=[
-//            'id' => $oPaymentAccount->account,
-//            'pay_id' => 'yawuyu',                 //这是默认的充值用户 因为我们演示的数据库充值 只有该用户名 如正式使用请为空
-//            'price' => 100.01,                    //充值金额
-//            'order_no' => 30000000009650, //充值订单
-//            'timestamp' => time(),                  //当前时间戳
-//            'type' => 4
-//        ];
-
-        ksort($aData);
+//
+//        ksort($aData);
         $aData['sign'] = $sSafeStr = $this->compileSign($oPaymentAccount, $aData, $this->signNeedColumns);
 //        var_dump($aData);
 //        exit;
@@ -155,14 +179,23 @@ class PaymentYICHONGZFBWAP extends BasePlatform
     {
         $oDeposit = UserDeposit::getDepositByNo($sOrderNo);
         $aData = [
-            'id' => $oPaymentAccount->account,
-            'order_no' => $sOrderNo,
+            'version' => $this->version,
+            'method' => $this->method,
+            'partner' => $oPaymentAccount->account,
+            'ordernumber' => $sOrderNo,
+            'sysnumber' => $sServiceOrderNo,
         ];
-        $aData['sign'] = $this->compileSign($oPaymentAccount, $aData, $this->querySignNeedColumns);
+        $aData['sign'] = $this->compileQuerySign($oPaymentAccount, $aData, $this->querySignNeedColumns);
         return $aData;
     }
 
-
+    public function & compileQueryResultSign($oPaymentAccount,$aInputData,$aNeedKeys=[]){
+        $sSignStr = $this->signStr($aInputData, $aNeedKeys);
+        $sSignStr = trim($sSignStr, '&');
+        $sSignStr .= 'key=' . $oPaymentAccount->safe_key;
+//        exit;
+        return $aInputData['sign'] == md5($sSignStr);
+    }
 
 
     /**
@@ -200,14 +233,23 @@ class PaymentYICHONGZFBWAP extends BasePlatform
         curl_close($ch); //关闭curl链接
         $aResponses = json_decode($sResponse, true);
         //返回格式不对
-        if (!$aResponses || !isset($aResponses['code'])) {
+        if (!$aResponses || !isset($aResponses['status'])) {
             return self::PAY_QUERY_PARSE_ERROR;
         }
 
-        if ($aResponses['code'] != 1) {
+        if ($aResponses['status'] != 1) {
             //支付返回成功校验签名
-                return self::PAY_QUERY_FAILED;
+            return self::PAY_NO_ORDER;
         }
+        if($aResponses['tradestate']!=1){
+            return self::PAY_UNPAY;
+        }
+
+        $bSucc = $this->compileQueryResultSign($oPaymentAccount,$aResponses,$this->queryResultSignNeedColumns);
+        if(!$bSucc){
+            return self::PAY_SIGN_ERROR;
+        }
+
         return self::PAY_SUCCESS;
     }
 
@@ -219,12 +261,12 @@ class PaymentYICHONGZFBWAP extends BasePlatform
      */
     public static function & compileCallBackData($aBackData, $sIp)
     {
-        $oDeposit = Deposit::getDepositByNo($aBackData['pay_no']);
+        $oDeposit = Deposit::getDepositByNo($aBackData['ordernumber']);
         $aData = [
-            'order_no' => $aBackData['pay_no'],
-            'service_order_no' => $oDeposit ? date('YmdHis', strtotime($oDeposit->created_at)) : $aBackData['trade_no'],
-            'merchant_code' => $aBackData['pay_id'],
-            'amount' => $aBackData['money'],
+            'order_no' => $aBackData['ordernumber'],
+            'service_order_no' => $oDeposit ? date('YmdHis', strtotime($oDeposit->created_at)) : $aBackData['sysnumber'],
+            'merchant_code' => $aBackData['partner'],
+            'amount' => $aBackData['paymoney'],
             'ip' => $sIp,
             'status' => DepositCallback::STATUS_CALLED,
             'post_data' => var_export($aBackData, true),
@@ -239,8 +281,8 @@ class PaymentYICHONGZFBWAP extends BasePlatform
     public static function & getServiceInfoFromQueryResult(& $aResponses)
     {
         $data = [
-            'service_order_no' => $aResponses['trade_no'],
-            'order_no' => $aResponses['pay_no'],
+            'service_order_no' => $aResponses['sysnumber'],
+            'order_no' => $aResponses['ordernumber'],
         ];
         return $data;
     }
