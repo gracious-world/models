@@ -20,9 +20,8 @@ class PaymentCXZFBWAP extends BasePlatform
 //	public $bankNoColumn           = 'bankCode';
     public $serviceOrderTimeColumn = 'endtime';
 
-    public $banktype = 21;
-    public $version = 1.0;
-    public $method = 'Gt.online.query';
+    public $banktype = 'ALIPAYWAP';
+    public $version = '3.0';
 
     public $bankTimeColumn = "paytime";
 
@@ -79,7 +78,7 @@ class PaymentCXZFBWAP extends BasePlatform
 //        var_dump($aNeedColumns);exit;
         foreach ($aNeedColumns as $sColumn) {
             if (isset($aInputData[$sColumn]) && $aInputData[$sColumn] != '') {
-                $sSignStr .= $sColumn . '=' . urlencode($aInputData[$sColumn]) . '&';
+                $sSignStr .= $sColumn . '=' .$aInputData[$sColumn] . '&';
             }
         }
         return $sSignStr;
@@ -100,8 +99,9 @@ class PaymentCXZFBWAP extends BasePlatform
         $sSignStr = $this->signStr($aInputData, $aNeedKeys);
         $sSignStr = trim($sSignStr, '&');
         $sSignStr .= $oPaymentAccount->safe_key;
+//        var_dump($sSignStr);
 //        exit;
-        return md5($sSignStr);
+        return strtolower(md5($sSignStr));
     }
 
 
@@ -145,13 +145,34 @@ class PaymentCXZFBWAP extends BasePlatform
      * @param $oBank
      * @param $sSafeStr
      *
+     *
+    string(205) "version=3.0&method=Gt.online.interface&partner=1018&banktype=ALIPAYWAP&paymoney=1000.00&ordernumber=3657116465b73dede9e141&callbackurl=http://www.my6688.com/dnotify/cxzfbwapfb302abe638e58289c9e61a07324bfbe"
+    array(8) {
+    ["version"]=>
+    string(3) "3.0"
+    ["method"]=>
+    string(19) "Gt.online.interface"
+    ["partner"]=>
+    string(4) "1018"
+    ["banktype"]=>
+    string(9) "ALIPAYWAP"
+    ["paymoney"]=>
+    string(7) "1000.00"
+    ["ordernumber"]=>
+    string(22) "3657116465b73dede9e141"
+    ["callbackurl"]=>
+    string(38) "http://www.my6688.com/dnotify/cxzfbwap"
+    ["sign"]=>
+    string(32) "78926eb0a4833d7e67e3af64717be370"
+    }
+
      * @return array
      */
     public function & compileInputData($oPaymentPlatform, $oPaymentAccount, $oDeposit, $oBank, & $sSafeStr)
     {
         $aData = [
             'version' => $this->version,
-            'method' => $this->method,
+            'method' => 'Gt.online.interface',
             'partner' => $oPaymentAccount->account,
             'banktype' => $this->banktype,
             'paymoney' => $oDeposit->amount,
@@ -180,7 +201,7 @@ class PaymentCXZFBWAP extends BasePlatform
         $oDeposit = UserDeposit::getDepositByNo($sOrderNo);
         $aData = [
             'version' => $this->version,
-            'method' => $this->method,
+            'method' =>'Gt.online.query' ,
             'partner' => $oPaymentAccount->account,
             'ordernumber' => $sOrderNo,
             'sysnumber' => $sServiceOrderNo,

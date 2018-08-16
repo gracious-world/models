@@ -1,9 +1,9 @@
 <?php
 
 /**
- * 聚鑫平台
  *
- * @author lucky
+ *
+ * @author sad
  *
  */
 class PaymentYICHONGZFBWAP extends BasePlatform
