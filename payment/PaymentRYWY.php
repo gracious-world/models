@@ -17,12 +17,13 @@ class PaymentRYWY extends BasePlatform {
 
     public $qrDirName;
 
+
     // 回调处理成功时，输出的字符串
     public $successMsg = 'stopNotify';
     // 签名变量名
     public $signColumn = 'signMsg';
     // 帐号变量名
-    public $accountColumn = 'merid';
+    public $accountColumn = 'merId';
     // 订单号变量名
     public $orderNoColumn = 'merOrdId';
     // 渠道方订单号变量名
@@ -30,7 +31,7 @@ class PaymentRYWY extends BasePlatform {
     // 回调的数据中，可用于检验是否成功的变量名
     public $successColumn = 'tradeStatus';
     // 回调的数据中,标志成功的变量值
-    public $successValue = 2;
+    public $successValue = 'success002';
     // 金额变量名
     public $amountColumn = 'merOrdAmt';
 
@@ -72,19 +73,18 @@ class PaymentRYWY extends BasePlatform {
     //查询需要验签的数组
     public $querySignNeedColumns = [
         'merId',
-        'merOrdId',
-        'signType',
         'timeStamp',
+        'merOrdId',
+        'signType'
     ];
 
     //查询结果需要验签的数组
     public $queryResultSignNeedColumns = [
-        'retMsg',
-        'tradeStatus',
         'merOrdId',
         'merOrdAmt',
+        'merId',
         'sysOrdId',
-        'merId'
+        'tradeStatus'
     ];
 
     protected function signStr($aInputData, $aNeedColumns = []) {
@@ -94,7 +94,7 @@ class PaymentRYWY extends BasePlatform {
 		}
 		foreach ($aNeedColumns as $sColumn) {
 			if (isset($aInputData[$sColumn]) && $aInputData[$sColumn] != '') {
-                $sSignStr .= $sColumn . '^' . $aInputData[$sColumn] . '&';
+                $sSignStr .= $sColumn . '=' . $aInputData[$sColumn] . '&';
 			}
 		}
 		return $sSignStr;
@@ -143,7 +143,29 @@ class PaymentRYWY extends BasePlatform {
 
 	/**
 	 * 充值请求表单数据组建
-	 *
+	 *string(249) "merId^990020378&merOrdId^20492625755b752ef9449cb&merOrdAmt^10000.00&payType^10&bankCode^10001&remark^hz&returnUrl^http://www.my6688.com/depositapi/rywy&notifyUrl^http://www.my6688.com/dnotify/rywy&signType^MD5&merKey=8Q3kJDwGN27mdf22MKpeFQ62nzDzGKPK"
+    array(10) {
+    ["merId"]=>
+    string(9) "990020378"
+    ["merOrdId"]=>
+    string(23) "20492625755b752ef9449cb"
+    ["merOrdAmt"]=>
+    string(8) "10000.00"
+    ["payType"]=>
+    int(10)
+    ["bankCode"]=>
+    string(5) "10001"
+    ["remark"]=>
+    string(2) "hz"
+    ["returnUrl"]=>
+    string(37) "http://www.my6688.com/depositapi/rywy"
+    ["notifyUrl"]=>
+    string(34) "http://www.my6688.com/dnotify/rywy"
+    ["signType"]=>
+    string(3) "MD5"
+    ["signMsg"]=>
+    string(32) "1e55d352fd8a34f9e129e94772e4221d"
+    }
 	 */
     public function & compileInputData($oPaymentPlatform, $oPaymentAccount, $oDeposit, $oBank, & $sSafeStr) {
         $aData = [
@@ -151,15 +173,16 @@ class PaymentRYWY extends BasePlatform {
             'merOrdId'=>$oDeposit->order_no,
             'merOrdAmt'=>$oDeposit->amount,
             'payType'=>$this->payType,
-            'bankCode'=>$oDeposit->bank_code,
+            'bankCode'=>$oBank ? $oBank->identifier : $this->bankCode,
             'remark'=>'hz',
             'returnUrl'=>$oPaymentPlatform->return_url,
-//        'pay_bankcode',
-            'notifyUrl'=>$oPaymentAccount->notify_url,
+            'notifyUrl'=>$oPaymentPlatform->notify_url,
             'signType'=>$this->signType
         ];
 
         $aData[$this->signColumn] = $this->compileSign($oPaymentAccount, $aData, $this->signNeedColumns);
+//        var_dump($oBank->toArray(),$aData);
+//        exit;
         return $aData;
     }
 
@@ -215,6 +238,7 @@ class PaymentRYWY extends BasePlatform {
 	 */
 	public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResponses) {
 		$aDataQuery = $this->compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo);
+//		var_dump($aDataQuery);
 		$sDataQuery = http_build_query($aDataQuery);
 		$ch         = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $oPaymentPlatform->getQueryUrl($oPaymentAccount));
@@ -230,15 +254,16 @@ class PaymentRYWY extends BasePlatform {
 		}
 		curl_close($ch); //关闭curl链接
 		$aResponses = json_decode($sResponse, true);
+//		var_dump($aResponses);exit;
 		//返回格式不对
 		if(!$aResponses || !isset($aResponses['tradeStatus'])){
 			return self::PAY_QUERY_PARSE_ERROR;
 		}
 		//todo
         switch($aResponses['tradeStatus']){
-            case 2 :
+            case '002' :
                     $sSign = $this->compileQueryReturnSign($oPaymentAccount,$aResponses);
-					if ($sSign != $aResponses['sign']) {
+					if ($sSign != $aResponses['signMsg']) {
 						return self::PAY_SIGN_ERROR;
 					}
 					return self::PAY_SUCCESS;
@@ -260,7 +285,7 @@ class PaymentRYWY extends BasePlatform {
 		$aData = [
 				'order_no' => $oDeposit->order_no,
 				'service_order_no' => $oDeposit ? date('YmdHis',strtotime($oDeposit->created_at)) : $aBackData['sysOrdId'],
-				'merchant_code' => $aBackData['merid'],
+				'merchant_code' => $aBackData['merId'],
 				'amount' => $aBackData['merOrdAmt'],
 				'ip' => $sIp,
 				'status' => DepositCallback::STATUS_CALLED,
