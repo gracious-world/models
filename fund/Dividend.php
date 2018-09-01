@@ -65,6 +65,8 @@ class Dividend extends BaseModel {
         'begin_date',
         'end_date',
         'username',
+        'parent',
+        'user_forefathers',
         'is_tester',
         'turnover',
         'prize',
