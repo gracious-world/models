@@ -36,6 +36,11 @@ class Dividend extends BaseModel {
         'end_date',
         'user_id',
         'username',
+        'parent_id',
+        'parent',
+        'user_forefather_ids',
+        'user_forefathers',
+
         'is_tester',
         'turnover',
         'valid_sales',
@@ -209,7 +214,10 @@ class Dividend extends BaseModel {
 
     public function send() {
         $aExtraData['note'] = "分红：$this->begin_date 至 $this->end_date";
-        $bSucc              = Transaction::addTransaction($this->User, $this->Account, TransactionType::TYPE_SEND_DIVIDEND, $this->amount, $aExtraData, $oTransaction) == Transaction::ERRNO_CREATE_SUCCESSFUL;
+        $sType=TransactionType::TYPE_SEND_DIVIDEND;
+        $this->amount>=0 or $sType = TransactionType::TYPE_CANCEL_DIVIDEND;
+        $this->amount = abs($this->amount);
+        $bSucc              = Transaction::addTransaction($this->User, $this->Account, $sType, $this->amount, $aExtraData, $oTransaction) == Transaction::ERRNO_CREATE_SUCCESSFUL;
         !$bSucc or $bSucc              = $this->setToSent();
         return $bSucc;
     }
@@ -273,4 +281,7 @@ class Dividend extends BaseModel {
         return $this->strictUpdate($aConditions, $data) > 0;
     }
 
+    protected function setParentIdAttribute($iParentId) {
+        $this->attributes['parent_id'] = $iParentId ? $iParentId : 0;
+    }
 }

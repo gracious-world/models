@@ -474,6 +474,22 @@ class TeamProfit extends BaseModel {
         return $aResult;
     }
 
+ /**
+     * 获取agent指定时间的盈亏数据总和
+     * @param string $sBeginDate    开始时间
+     * @param string $sEndDate       结束时间
+     */
+    public static function & getAgentProfitByDate($sBeginDate, $sEndDate, $iParentId) {
+        $oQuery = static::select(DB::raw('username,user_id,is_tester, sum(profit) total_profit, sum(turnover) total_turnover, sum(prize) total_prize, sum(commission) total_commission, sum(bonus) total_bonus, sum(lose_commission) total_lose_commission'));
+        $oQuery = $oQuery->whereBetween('date',[$sBeginDate,$sEndDate])->where('is_agent',true);
+        $oQuery = $oQuery->whereRaw('(find_in_set(?,user_forefather_ids))', [$iParentId, $iParentId]);
+
+//        $oQuery = $oQuery->where('is_tester',false);
+        $aResult = $oQuery->get();
+
+        return $aResult;
+    }
+
 
     /**
      * 获取团队指定时间的盈亏数据总和

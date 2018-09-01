@@ -83,7 +83,7 @@ class UserProject extends Project {
             $this->user_commission = formatNumber($this->user_rebate * $this->amount, 6);
         }
         $iParentId = $oUser->parent_id;//上级的用户id号
-        $this->user_parent_id = 0;
+        $this->user_parent_id = $iParentId;
         if ($iParentId && $oRebateSetting) {
             //如果存在上级,则 上级的 等级,返点比率,返点值 写入.否则 为 NULL
             $oParent = User::find($iParentId);

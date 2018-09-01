@@ -707,5 +707,23 @@ class UserProfit extends BaseModel {
         return $aResult;
     }
 
+    /**
+     * 队长分红用于获取有效投注用户
+     * (统计团队中满足当月充值不低月dividend_valid_deposit元
+     * 投注不低于dividend_valid_turnover元的成员个数)
+     *
+     * @param $sBeginDate
+     * @param $sEndDate
+     * @param $iParentId
+     *
+     * @return mixed
+     */
+    public static function getValidUserNum($sBeginDate, $sEndDate, $iParentId){
+        return static::select('distinct(user_id)')
+            ->whereBetween("date", [$sBeginDate,$sEndDate])
+            ->whereRaw('find_in_set(?,user_forefather_ids)',[$iParentId])
+            ->count();
+    }
+
 
 }

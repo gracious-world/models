@@ -355,7 +355,9 @@ class WayGroup extends BaseModel {
 
                     $aWayPrizes      = [];
                     foreach ($aBasicMethodIds as $iBasicMethodId) {
-                        $aWayPrizes[] = $aPrizes[$iBasicMethodId]['prize'];
+                        if(isset($aPrizes[$iBasicMethodId])) {
+                            $aWayPrizes[] = $aPrizes[$iBasicMethodId]['prize'];
+                        }
                     }
 
                     if ($fMaxPrize) {
