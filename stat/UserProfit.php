@@ -686,7 +686,7 @@ class UserProfit extends BaseModel {
      * @param string $sEndDate       结束时间
      */
     public static function & getUserProfitByTopAgentDate($sBeginDate, $sEndDate, $iParentId , $aUserIds=null, $sUsername=null) {
-        $oQuery = static::select(DB::raw('sum(profit) total_profit, sum(turnover) total_turnover, sum(prize) total_prize, sum(commission) total_commission, sum(bonus) total_bonus, sum(lose_commission) total_lose_commission'))
+        $oQuery = static::select(DB::raw('sum(profit) total_profit, sum(turnover) total_turnover, sum(prize) total_prize, sum(commission) total_commission, sum(bonus) total_bonus, sum(deposit) total_deposit,sum(lose_commission) total_lose_commission'))
             ->where('date', '>=', $sBeginDate)->where('date', '<=', $sEndDate);
 
         $oQuery = $oQuery->whereRaw(" (find_in_set(?,user_forefather_ids) or user_id= ? )", [$iParentId,$iParentId]);
