@@ -411,9 +411,9 @@ class UserProject extends Project {
      */
     protected function & compileCommissions() {
         $aCommissions    = [];
-//        if ($aSelfCommission = $this->compileSelfCommission()) {
-//            $aCommissions[] = $aSelfCommission;
-//        }
+        if ($aSelfCommission = $this->compileSelfCommission()) {
+            $aCommissions[] = $aSelfCommission;
+        }
         if (!$this->user_forefather_ids) {
             return $aCommissions;
         }
@@ -543,12 +543,13 @@ class UserProject extends Project {
 
     //计算佣金 根据奖金组
     private function compileSelfCommission() {
-        $iMaxGroupId = UserUserPrizeSet::getGroupId($this->user_id, $this->lottery_id, $sMaxGroupName);
-        if ($sMaxGroupName == $this->prize_group) {
-            return false;
-        }
+//        $iMaxGroupId = UserUserPrizeSet::getGroupId($this->user_id, $this->lottery_id, $sMaxGroupName);
+//        if ($sMaxGroupName == $this->prize_group) {
+//            return false;
+//        }
         $oUser           = User::find($this->user_id);
-        $iRate           = ($sMaxGroupName - $this->prize_group) / 2000;
+//        $iRate           = ($sMaxGroupName - $this->prize_group) / 2000;
+        $iRate           = 0.03;
         $fAmount         = formatNumber($iRate * $this->amount, 6);
         $aCommissionData = [
             'user_id'             => $oUser->id,
