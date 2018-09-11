@@ -27,6 +27,7 @@ class PaymentCXZFBWAP extends BasePlatform
 
     protected $paymentName = 'cxzfbwap';
 
+    public $serviceOrderNo;
     //交易签名所需字段
     public $signNeedColumns = [
         'version',
@@ -64,8 +65,6 @@ class PaymentCXZFBWAP extends BasePlatform
         'ordernumber',
         'orderstatus',
         'paymoney',
-        'sysnumber',
-        'sign'
     ];
 
     protected function signStr($aInputData, $aNeedColumns = [])
@@ -99,8 +98,6 @@ class PaymentCXZFBWAP extends BasePlatform
         $sSignStr = $this->signStr($aInputData, $aNeedKeys);
         $sSignStr = trim($sSignStr, '&');
         $sSignStr .= $oPaymentAccount->safe_key;
-//        var_dump($sSignStr);
-//        exit;
         return strtolower(md5($sSignStr));
     }
 
@@ -114,6 +111,7 @@ class PaymentCXZFBWAP extends BasePlatform
      */
     public function compileSignReturn($oPaymentAccount, $aInputData)
     {
+        $this->serviceOrderNo=$aInputData['sysnumber'];
         return $this->compileSign($oPaymentAccount, $aInputData, $this->notifySignNeedColumns);
     }
 
@@ -131,7 +129,7 @@ class PaymentCXZFBWAP extends BasePlatform
     {
         $sSignStr = $this->signStr($aInputData, $aNeedKeys);
         $sSignStr = trim($sSignStr, '&');
-        $sSignStr .= 'key=' . $oPaymentAccount->safe_key;
+        $sSignStr .= '&key=' . $oPaymentAccount->safe_key;
 //        exit;
         return md5($sSignStr);
     }
@@ -211,11 +209,28 @@ class PaymentCXZFBWAP extends BasePlatform
     }
 
     public function & compileQueryResultSign($oPaymentAccount,$aInputData,$aNeedKeys=[]){
-        $sSignStr = $this->signStr($aInputData, $aNeedKeys);
+         $sSignStr = '';
+        $aNeedColumns = $aNeedKeys;
+        if (!$aNeedKeys) {
+            $aNeedColumns = array_keys($aInputData);
+        }
+//        sort($aNeedColumns);
+//        var_dump($aNeedColumns);exit;
+        foreach ($aNeedColumns as $sColumn) {
+            if (isset($aInputData[$sColumn]) && $aInputData[$sColumn] != '') {
+                $sSignStr .= $sColumn . '=' .$aInputData[$sColumn] . '&';
+            }
+            if($sColumn=='partner'){
+                $sSignStr .= $sColumn . '=' .$aInputData[$sColumn] . '&';
+            }
+        }
+
         $sSignStr = trim($sSignStr, '&');
-        $sSignStr .= 'key=' . $oPaymentAccount->safe_key;
+        $sSignStr .= '&key=' . $oPaymentAccount->safe_key;
 //        exit;
-        return $aInputData['sign'] == md5($sSignStr);
+        $sInputSign=$aInputData['sign'];
+        $b=($sInputSign == md5($sSignStr));
+        return $b;
     }
 
 
@@ -237,6 +252,7 @@ class PaymentCXZFBWAP extends BasePlatform
      */
     public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResponses)
     {
+        $sServiceOrderNo = $this->serviceOrderNo;
         $aDataQuery = $this->compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo);
         $sDataQuery = http_build_query($aDataQuery);
         $ch = curl_init();
@@ -257,7 +273,6 @@ class PaymentCXZFBWAP extends BasePlatform
         if (!$aResponses || !isset($aResponses['status'])) {
             return self::PAY_QUERY_PARSE_ERROR;
         }
-
         if ($aResponses['status'] != 1) {
             //支付返回成功校验签名
             return self::PAY_NO_ORDER;
