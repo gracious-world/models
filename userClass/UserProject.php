@@ -411,9 +411,9 @@ class UserProject extends Project {
      */
     protected function & compileCommissions() {
         $aCommissions    = [];
-        if ($aSelfCommission = $this->compileSelfCommission()) {
-            $aCommissions[] = $aSelfCommission;
-        }
+//        if ($aSelfCommission = $this->compileSelfCommission()) {
+//            $aCommissions[] = $aSelfCommission;
+//        }
         if (!$this->user_forefather_ids) {
             return $aCommissions;
         }
