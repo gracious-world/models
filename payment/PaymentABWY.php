@@ -1,71 +1,70 @@
 <?php
 
 /**
- * jian fu
+ * AO BANG WANG YIN
  *
  * @author sad
  *
  */
-class PaymentJFZFBWAP extends BasePlatform
+class PaymentABWY extends BasePlatform
 {
 
-    public $successMsg = 'success';
+    public $successMsg = '{"code": 1}';
     public $signColumn = 'sign';
-    public $accountColumn = 'spid';
-    public $orderNoColumn = 'spbillno';
-    public $paymentOrderNoColumn = 'transaction_id';
-    public $successColumn = 'retcode';
-    public $successValue = 0;
-    public $amountColumn = 'tran_amt';
+    public $accountColumn = 'partner';
+    public $orderNoColumn = 'ordernumber';
+    public $paymentOrderNoColumn = 'sysnumber';
+    public $successColumn = 'orderstatus';
+    public $successValue = 1;
+    public $amountColumn = 'paymoney';
 //	public $bankNoColumn           = 'bankCode';
-//    public $serviceOrderTimeColumn = 'endtime';
+    public $serviceOrderTimeColumn = 'endtime';
 
-    public $payType = 'pay.alipay.wap';
-    public $version = '1.0';
+    public $banktype = 'ALIPAYWAP';
+    public $version = '3.0';
 
-//    public $bankTimeColumn = "paytime";
+    public $bankTimeColumn = "paytime";
 
-    protected $paymentName = 'jfzfbwap';
+    protected $paymentName = 'cxzfbwap';
 
     public $serviceOrderNo;
     //交易签名所需字段
     public $signNeedColumns = [
         'version',
-        'spid',
-        'spbillno',
-        'tranAmt',
-        'payType',
-        'backUrl',
-        'notifyUrl',
-        'productName',
+        'method',
+        'partner',
+        'banktype',
+        'paymoney',
+        'ordernumber',
+        'callbackurl',
+        'hrefbackurl',
     ];
 
     public $querySignNeedColumns = [
         'version',
-        'spid',
-        'transaction_id',
+        'method',
+        'partner',
+        'ordernumber',
+        'sysnumber'
     ];
-
     public $queryResultSignNeedColumns = [
-        'retcode',
-        'retmsg',
-        'spid',
-        'spbillno',
-        'transaction_id',
-        'out_transaction_id',
-        'tran_amt',
-        'result',
+        'version',
+        'partner',
+        'ordernumber',
+        'sysnumber',
+        'status',
+        'tradestate',
+        'paymoney',
+        'banktype',
+        'paytime',
+        'endtime'
     ];
     //通知签名字段
     public $notifySignNeedColumns = [
-        'retcode',
-        'retmsg',
-        'spid',
-        'spbillno',
-        'transaction_id',
-        'out_transaction_id',
-        'tran_amt',
-        'result',
+        'partner',
+        'ordernumber',
+        'orderstatus',
+        'paymoney',
     ];
 
     protected function signStr($aInputData, $aNeedColumns = [])
@@ -74,7 +73,7 @@ class PaymentJFZFBWAP extends BasePlatform
         if (!$aNeedColumns) {
             $aNeedColumns = array_keys($aInputData);
         }
-        sort($aNeedColumns);
+//        sort($aNeedColumns);
 //        var_dump($aNeedColumns);exit;
         foreach ($aNeedColumns as $sColumn) {
             if (isset($aInputData[$sColumn]) && $aInputData[$sColumn] != '') {
@@ -98,8 +97,8 @@ class PaymentJFZFBWAP extends BasePlatform
 
         $sSignStr = $this->signStr($aInputData, $aNeedKeys);
         $sSignStr = trim($sSignStr, '&');
-        $sSignStr .= '&key='.$oPaymentAccount->safe_key;
-        return strtoupper(md5($sSignStr));
+        $sSignStr .= $oPaymentAccount->safe_key;
+        return strtolower(md5($sSignStr));
     }
 
 
@@ -112,7 +111,7 @@ class PaymentJFZFBWAP extends BasePlatform
      */
     public function compileSignReturn($oPaymentAccount, $aInputData)
     {
-        $this->serviceOrderNo = $aInputData['transaction_id'];
+        $this->serviceOrderNo=$aInputData['sysnumber'];
         return $this->compileSign($oPaymentAccount, $aInputData, $this->notifySignNeedColumns);
     }
 
@@ -126,20 +125,15 @@ class PaymentJFZFBWAP extends BasePlatform
      * @param array $aNeedKeys
      * @return string
      */
-    public function compileQuerySign($oPaymentAccount, $aInputData )
+    public function compileQuerySign($oPaymentAccount, $aInputData, $aNeedKeys = [])
     {
-        return $this->compileSign($oPaymentAccount, $aInputData, $this->querySignNeedColumns);
+        $sSignStr = $this->signStr($aInputData, $aNeedKeys);
+        $sSignStr = trim($sSignStr, '&');
+        $sSignStr .= '&key=' . $oPaymentAccount->safe_key;
+//        exit;
+        return md5($sSignStr);
     }
 
-    /**
-     * query result sign
-     * @param $oPaymentAccount
-     * @param $aInputData
-     * @return string
-     */
-    public function & compileQueryResultSign($oPaymentAccount,$aInputData){
-        return $this->compileSign($oPaymentAccount,$aInputData,$this->compileQueryResultSign());
-    }
     /**
      * 充值请求表单数据组建
      *
@@ -176,26 +170,20 @@ class PaymentJFZFBWAP extends BasePlatform
     {
         $aData = [
             'version' => $this->version,
-            'spid' => $oPaymentAccount->account,
-            'spbillno' => $oDeposit->order_no,
-            'tranAmt' => $oDeposit->amount*100,
-            'payType' => $this->payType,
-            'backUrl' => $oPaymentPlatform->return_url,
-            'notifyUrl' => $oPaymentPlatform->notify_url,
-            'productName' => 'hz',
+            'method' => 'Gt.online.interface',
+            'partner' => $oPaymentAccount->account,
+            'banktype' => $this->banktype,
+            'paymoney' => $oDeposit->amount,
+            'ordernumber' => $oDeposit->order_no,
+            'callbackurl' => $oPaymentPlatform->notify_url,
         ];
 
-        ksort($aData);
-        $aData['sign'] =  $this->compileSign($oPaymentAccount, $aData, $this->signNeedColumns);
-        $req_data='<xml>';
-        foreach($aData as $k=>$v){
-            $req_data.="<$k>$v</$k>";
-        }
-        $req_data.='</xml>';
-//        var_dump(__FILE__,__LINE__,$req_data);exit;
-//        array_shift($aData);
-        $data = ['req_data' => $req_data];
-        return $data;
+//
+//        ksort($aData);
+        $aData['sign'] = $sSafeStr = $this->compileSign($oPaymentAccount, $aData, $this->signNeedColumns);
+//        var_dump($aData);
+//        exit;
+        return $aData;
     }
 
     /**
@@ -208,22 +196,42 @@ class PaymentJFZFBWAP extends BasePlatform
      */
     public function & compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo)
     {
+        $oDeposit = UserDeposit::getDepositByNo($sOrderNo);
         $aData = [
             'version' => $this->version,
-            'spid' => $oPaymentAccount->account,
-            'transaction_id' => $sServiceOrderNo,
+            'method' =>'Gt.online.query' ,
+            'partner' => $oPaymentAccount->account,
+            'ordernumber' => $sOrderNo,
+            'sysnumber' => $sServiceOrderNo,
         ];
-        ksort($aData);
         $aData['sign'] = $this->compileQuerySign($oPaymentAccount, $aData, $this->querySignNeedColumns);
-
-        $req_data='<xml>';
-        foreach($aData as $k=>$v){
-            $req_data.="<$k>$v</$k>";
-        }
-        $req_data.='</xml>';
-        return $req_data;
+        return $aData;
     }
 
+    public function & compileQueryResultSign($oPaymentAccount,$aInputData,$aNeedKeys=[]){
+         $sSignStr = '';
+        $aNeedColumns = $aNeedKeys;
+        if (!$aNeedKeys) {
+            $aNeedColumns = array_keys($aInputData);
+        }
+//        sort($aNeedColumns);
+//        var_dump($aNeedColumns);exit;
+        foreach ($aNeedColumns as $sColumn) {
+            if (isset($aInputData[$sColumn]) && $aInputData[$sColumn] != '') {
+                $sSignStr .= $sColumn . '=' .$aInputData[$sColumn] . '&';
+            }
+            if($sColumn=='partner'){
+                $sSignStr .= $sColumn . '=' .$aInputData[$sColumn] . '&';
+            }
+        }
+
+        $sSignStr = trim($sSignStr, '&');
+        $sSignStr .= '&key=' . $oPaymentAccount->safe_key;
+//        exit;
+        $sInputSign=$aInputData['sign'];
+        $b=($sInputSign == md5($sSignStr));
+        return $b;
+    }
 
 
     /**
@@ -245,7 +253,8 @@ class PaymentJFZFBWAP extends BasePlatform
     public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResponses)
     {
         $sServiceOrderNo = $this->serviceOrderNo;
-        $sDataQuery = $this->compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo);
+        $aDataQuery = $this->compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo);
+        $sDataQuery = http_build_query($aDataQuery);
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $oPaymentPlatform->getQueryUrl($oPaymentAccount));
         curl_setopt($ch, CURLOPT_POST, 1);
@@ -259,18 +268,17 @@ class PaymentJFZFBWAP extends BasePlatform
             print curl_error($ch);
         }
         curl_close($ch); //关闭curl链接
-        var_dump(__FILE__,__LINE__,$sResponse);
         $aResponses = json_decode($sResponse, true);
-        var_dump(__FILE__,__LINE__,$aResponses);exit;
-
         //返回格式不对
-        if (!$aResponses || !isset($aResponses['retcode'])) {
+        if (!$aResponses || !isset($aResponses['status'])) {
             return self::PAY_QUERY_PARSE_ERROR;
         }
-
-        if ($aResponses['retcode'] != 1) {
+        if ($aResponses['status'] != 1) {
             //支付返回成功校验签名
             return self::PAY_NO_ORDER;
+        }
+        if($aResponses['tradestate']!=1){
+            return self::PAY_UNPAY;
         }
 
         $bSucc = $this->compileQueryResultSign($oPaymentAccount,$aResponses,$this->queryResultSignNeedColumns);
@@ -289,12 +297,12 @@ class PaymentJFZFBWAP extends BasePlatform
      */
     public static function & compileCallBackData($aBackData, $sIp)
     {
-        $oDeposit = Deposit::getDepositByNo($aBackData['spbillno']);
+        $oDeposit = Deposit::getDepositByNo($aBackData['ordernumber']);
         $aData = [
-            'order_no' => $aBackData['spbillno'],
-            'service_order_no' => $oDeposit ? date('YmdHis', strtotime($oDeposit->created_at)) : $aBackData['transaction_id'],
-            'merchant_code' => $aBackData['spid'],
-            'amount' => $aBackData['tran_amt']/100,
+            'order_no' => $aBackData['ordernumber'],
+            'service_order_no' => $oDeposit ? date('YmdHis', strtotime($oDeposit->created_at)) : $aBackData['sysnumber'],
+            'merchant_code' => $aBackData['partner'],
+            'amount' => $aBackData['paymoney'],
             'ip' => $sIp,
             'status' => DepositCallback::STATUS_CALLED,
             'post_data' => var_export($aBackData, true),
@@ -309,20 +317,10 @@ class PaymentJFZFBWAP extends BasePlatform
     public static function & getServiceInfoFromQueryResult(& $aResponses)
     {
         $data = [
-            'service_order_no' => $aResponses['transaction_id'],
-            'order_no' => $aResponses['spbillno'],
+            'service_order_no' => $aResponses['sysnumber'],
+            'order_no' => $aResponses['ordernumber'],
         ];
         return $data;
     }
 
-    /**
-     * 从数组中取得金额
-     *
-     * @param array $data
-     *
-     * @return float
-     */
-    public function getPayAmount($data) {
-        return $data[$this->amountColumn]/100;
-    }
 }
