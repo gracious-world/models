@@ -101,7 +101,7 @@ class DepositCallback extends BaseModel {
         'platform_id' => 'integer',
         'platform' => 'max:50',
         'platform_identifier' => 'max:16',
-        'merchant_code' => 'required|max:16',
+        'merchant_code' => 'required|max:32',
         'amount' => 'required|regex:/^[0-9]+(.[0-9]{1,4})?$/',
         'ip' => 'required|ip',
         'status' => 'required|min:0|max:32',

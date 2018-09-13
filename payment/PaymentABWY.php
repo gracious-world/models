@@ -14,9 +14,9 @@ class PaymentABWY extends BasePlatform
     public $accountColumn = 'trx_key';
     public $orderNoColumn = 'request_id';
     public $paymentOrderNoColumn = 'pay_request_id';
-    public $successColumn = 'rsp_code';
-    public $successValue = "0000";
-    public $amountColumn = 'rsp_code';
+    public $successColumn = 'trx_status';
+    public $successValue = 2;
+    public $amountColumn = 'ord_amount';
 //	public $bankNoColumn           = 'bankCode';
     public $serviceOrderTimeColumn = 'trx_time';
 
@@ -59,6 +59,7 @@ class PaymentABWY extends BasePlatform
         'ord_amount',
         'request_id',
         'trx_status',
+        'product_type',
         'request_time',
         'goods_name',
         'trx_time',
@@ -74,7 +75,7 @@ class PaymentABWY extends BasePlatform
         sort($aNeedColumns);
 //        var_dump($aNeedColumns);exit;
         foreach ($aNeedColumns as $sColumn) {
-            if (isset($aInputData[$sColumn]) && $aInputData[$sColumn] != '') {
+            if (isset($aInputData[$sColumn])) {
                 $sSignStr .= $sColumn . '=' .$aInputData[$sColumn] . '&';
             }
         }
@@ -133,7 +134,8 @@ class PaymentABWY extends BasePlatform
 
     public function & compileQueryResultSign($oPaymentAccount,$aInputData,$aNeedKeys=[])
     {
-        return $this->compileSign($oPaymentAccount, $aInputData, $this->compileQueryResultSign());
+            $sSign = $this->compileSign($oPaymentAccount, $aInputData, $this->queryResultSignNeedColumns);
+            return $sSign;
     }
     /**
      * 充值请求表单数据组建
@@ -227,15 +229,15 @@ class PaymentABWY extends BasePlatform
             return self::PAY_QUERY_PARSE_ERROR;
         }
 
-        if ($aResponses['rsp_code'] != 1) {
+        if ($aResponses['rsp_code'] != '0000') {
             //支付返回成功校验签名
             return self::PAY_NO_ORDER;
         }
 
-        if($aResponses['ord_status']!=1){
+        if($aResponses['ord_status']!=2){
             return self::PAY_UNPAY;
         }
-
+        ksort($aResponses);
         $sSign = $this->compileQueryResultSign($oPaymentAccount, $aResponses, $this->queryResultSignNeedColumns);
         if ($sSign != $aResponses['sign']) {
             return self::PAY_SIGN_ERROR;
@@ -266,13 +268,14 @@ class PaymentABWY extends BasePlatform
             'referer' => isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : null,
             'http_user_agent' => isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : null,
         ];
+
         return $aData;
     }
 
     public static function & getServiceInfoFromQueryResult(& $aResponses)
     {
         $data = [
-            'service_order_no' => $aResponses['request_id'],
+            'service_order_no' => $aResponses['pay_request_id'],
             'order_no' => $aResponses['request_id'],
         ];
         return $data;

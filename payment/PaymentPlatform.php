@@ -330,21 +330,23 @@ class PaymentPlatform extends BaseModel {
         return is_object($oPaymentType) ? $oPaymentType->name : '';
     }
 
+    //TODO this is main method for call back history
+    //notice the same method in the BasePlatform
     public function addCallBackHistory(& $data, $ip) {
         $aData = $this->platform->compileCallBackData($data, $ip);
+        Log::info(__FILE__.__LINE__);
         $aData['platform_id'] = $this->id;
         $aData['platform'] = $this->name;
         $aData['platform_identifier'] = $this->identifier;
         $oDepositCallback = new DepositCallback($aData);
         if ($oDepositCallback->save()) {
+            Log::info(__FILE__.__LINE__);
             return $oDepositCallback;
         } else {
+            Log::info(__FILE__.__LINE__);
             file_put_contents('/tmp/deposit-callback-error', $oDepositCallback->getValidationErrorString());
         }
         return false;
-//        $aData = static::compileCallBackData($data, $ip);
-//        $oDepositCallback = new DepositCallback($aData);
-//        return $oDepositCallback->save();
     }
 
     public static function deleteAllCache() {

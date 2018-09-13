@@ -12,8 +12,8 @@ class PaymentJFWY extends PaymentJFZFBWAP
     public $cardType =1;//借记卡
 
     public $userType = 1;//个人
-    public $channel = 1;
-    public $bankSegment = 1002;
+    public $channel = 1; // 1 pc ; 2 mobile
+    public $bankSegment = 1002;//ABC
 
 
     public $signNeedColumns=[
@@ -51,7 +51,7 @@ class PaymentJFWY extends PaymentJFZFBWAP
             'cardType' => $this->cardType,
             'channel' => $this->channel,
             'userType' => $this->userType,
-            'bankSegment' => $this->bankSegment,
+            'bankSegment'=>$oBank ? $oBank->identifier : $this->bankCode,
             'backUrl' => $oPaymentPlatform->return_url,
             'notifyUrl' => $oPaymentPlatform->notify_url,
             'productName' => 'hz',
@@ -71,5 +71,32 @@ class PaymentJFWY extends PaymentJFZFBWAP
         return $data;
     }
 
+
+    /**
+     * 查询签名组建
+     *
+     * @param $oPaymentAccount
+     * @param $sOrderNo
+     * @param $sServiceOrderNo
+     *
+     */
+    public function & compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo)
+    {
+        $aData = [
+            'version' => $this->version,
+            'spid' => $oPaymentAccount->account,
+            'transaction_id' => $sServiceOrderNo,
+        ];
+        ksort($aData);
+        $aData['sign'] = $this->compileQuerySign($oPaymentAccount, $aData, $this->querySignNeedColumns);
+
+        $req_data='<xml>';
+        foreach($aData as $k=>$v){
+            $req_data.="<$k>$v</$k>";
+        }
+        $req_data.='</xml>';
+
+        return $req_data;
+    }
 
 }
