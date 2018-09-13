@@ -9,62 +9,60 @@
 class PaymentABWY extends BasePlatform
 {
 
-    public $successMsg = '{"code": 1}';
+    public $successMsg = 'SUCCESS';
     public $signColumn = 'sign';
-    public $accountColumn = 'partner';
-    public $orderNoColumn = 'ordernumber';
-    public $paymentOrderNoColumn = 'sysnumber';
-    public $successColumn = 'orderstatus';
-    public $successValue = 1;
-    public $amountColumn = 'paymoney';
+    public $accountColumn = 'trx_key';
+    public $orderNoColumn = 'request_id';
+    public $paymentOrderNoColumn = 'pay_request_id';
+    public $successColumn = 'rsp_code';
+    public $successValue = "0000";
+    public $amountColumn = 'rsp_code';
 //	public $bankNoColumn           = 'bankCode';
-    public $serviceOrderTimeColumn = 'endtime';
+    public $serviceOrderTimeColumn = 'trx_time';
 
-    public $banktype = 'ALIPAYWAP';
-    public $version = '3.0';
+    public $productType = '50103';
+    public $bankCode = '1103';
 
-    public $bankTimeColumn = "paytime";
 
-    protected $paymentName = 'cxzfbwap';
+    protected $paymentName = 'abwy';
 
-    public $serviceOrderNo;
     //交易签名所需字段
     public $signNeedColumns = [
-        'version',
-        'method',
-        'partner',
-        'banktype',
-        'paymoney',
-        'ordernumber',
-        'callbackurl',
-        'hrefbackurl',
+        'trx_key',
+        'ord_amount',
+        'request_id',
+        'request_ip',
+        'product_type',
+        'request_time',
+        'goods_name',
+        'bank_code',
+        'return_url',
+       'callback_url'
     ];
 
     public $querySignNeedColumns = [
-        'version',
-        'method',
-        'partner',
-        'ordernumber',
-        'sysnumber'
+        'trx_key',
+        'request_id',
     ];
     public $queryResultSignNeedColumns = [
-        'version',
-        'partner',
-        'ordernumber',
-        'sysnumber',
-        'status',
-        'tradestate',
-        'paymoney',
-        'banktype',
-        'paytime',
-        'endtime'
+        'rsp_code',
+        'ord_amount',
+        'request_id',
+        'ord_status',
+        'pay_request_id',
+        'complete_date',
+        'rsp_msg',
     ];
     //通知签名字段
     public $notifySignNeedColumns = [
-        'partner',
-        'ordernumber',
-        'orderstatus',
-        'paymoney',
+        'trx_key',
+        'ord_amount',
+        'request_id',
+        'trx_status',
+        'request_time',
+        'goods_name',
+        'trx_time',
+        'pay_request_id',
     ];
 
     protected function signStr($aInputData, $aNeedColumns = [])
@@ -73,7 +71,7 @@ class PaymentABWY extends BasePlatform
         if (!$aNeedColumns) {
             $aNeedColumns = array_keys($aInputData);
         }
-//        sort($aNeedColumns);
+        sort($aNeedColumns);
 //        var_dump($aNeedColumns);exit;
         foreach ($aNeedColumns as $sColumn) {
             if (isset($aInputData[$sColumn]) && $aInputData[$sColumn] != '') {
@@ -97,8 +95,8 @@ class PaymentABWY extends BasePlatform
 
         $sSignStr = $this->signStr($aInputData, $aNeedKeys);
         $sSignStr = trim($sSignStr, '&');
-        $sSignStr .= $oPaymentAccount->safe_key;
-        return strtolower(md5($sSignStr));
+        $sSignStr .='&secret_key='.$oPaymentAccount->safe_key;
+        return strtoupper(md5($sSignStr));
     }
 
 
@@ -111,7 +109,6 @@ class PaymentABWY extends BasePlatform
      */
     public function compileSignReturn($oPaymentAccount, $aInputData)
     {
-        $this->serviceOrderNo=$aInputData['sysnumber'];
         return $this->compileSign($oPaymentAccount, $aInputData, $this->notifySignNeedColumns);
     }
 
@@ -127,13 +124,13 @@ class PaymentABWY extends BasePlatform
      */
     public function compileQuerySign($oPaymentAccount, $aInputData, $aNeedKeys = [])
     {
-        $sSignStr = $this->signStr($aInputData, $aNeedKeys);
-        $sSignStr = trim($sSignStr, '&');
-        $sSignStr .= '&key=' . $oPaymentAccount->safe_key;
-//        exit;
-        return md5($sSignStr);
+        return $this->compileSign($oPaymentAccount, $aInputData, $this->notifySignNeedColumns);
     }
 
+    public function & compileQueryResultSign($oPaymentAccount,$aInputData,$aNeedKeys=[])
+    {
+        return $this->compileSign($oPaymentAccount, $aInputData, $this->compileQueryResultSign());
+    }
     /**
      * 充值请求表单数据组建
      *
@@ -143,44 +140,27 @@ class PaymentABWY extends BasePlatform
      * @param $oBank
      * @param $sSafeStr
      *
-     *
-    string(205) "version=3.0&method=Gt.online.interface&partner=1018&banktype=ALIPAYWAP&paymoney=1000.00&ordernumber=3657116465b73dede9e141&callbackurl=http://www.my6688.com/dnotify/cxzfbwapfb302abe638e58289c9e61a07324bfbe"
-    array(8) {
-    ["version"]=>
-    string(3) "3.0"
-    ["method"]=>
-    string(19) "Gt.online.interface"
-    ["partner"]=>
-    string(4) "1018"
-    ["banktype"]=>
-    string(9) "ALIPAYWAP"
-    ["paymoney"]=>
-    string(7) "1000.00"
-    ["ordernumber"]=>
-    string(22) "3657116465b73dede9e141"
-    ["callbackurl"]=>
-    string(38) "http://www.my6688.com/dnotify/cxzfbwap"
-    ["sign"]=>
-    string(32) "78926eb0a4833d7e67e3af64717be370"
-    }
-
      * @return array
      */
     public function & compileInputData($oPaymentPlatform, $oPaymentAccount, $oDeposit, $oBank, & $sSafeStr)
     {
         $aData = [
-            'version' => $this->version,
-            'method' => 'Gt.online.interface',
-            'partner' => $oPaymentAccount->account,
-            'banktype' => $this->banktype,
-            'paymoney' => $oDeposit->amount,
-            'ordernumber' => $oDeposit->order_no,
-            'callbackurl' => $oPaymentPlatform->notify_url,
+            'trx_key' => $oPaymentAccount->account,
+            'ord_amount' => $oDeposit->amount,
+            'request_id' => $oDeposit->order_no,
+            'request_ip' => Tool::getClientIp(),
+            'product_type' => $this->productType,
+            'goods_name' => 'hz' ,
+            'request_time' => date('YmdHis') ,
+            'bank_code' => $this->bankCode,
+            'return_url' => $oPaymentPlatform->return_url,
+            'callback_url' => $oPaymentPlatform->notify_url,
+
         ];
 
 //
-//        ksort($aData);
-        $aData['sign'] = $sSafeStr = $this->compileSign($oPaymentAccount, $aData, $this->signNeedColumns);
+        ksort($aData);
+        $aData['sign'] =  $this->compileSign($oPaymentAccount, $aData, $this->signNeedColumns);
 //        var_dump($aData);
 //        exit;
         return $aData;
@@ -198,40 +178,13 @@ class PaymentABWY extends BasePlatform
     {
         $oDeposit = UserDeposit::getDepositByNo($sOrderNo);
         $aData = [
-            'version' => $this->version,
-            'method' =>'Gt.online.query' ,
-            'partner' => $oPaymentAccount->account,
-            'ordernumber' => $sOrderNo,
-            'sysnumber' => $sServiceOrderNo,
+            'trx_key' => $oPaymentAccount->account,
+            'request_id' => $sOrderNo,
         ];
         $aData['sign'] = $this->compileQuerySign($oPaymentAccount, $aData, $this->querySignNeedColumns);
         return $aData;
     }
 
-    public function & compileQueryResultSign($oPaymentAccount,$aInputData,$aNeedKeys=[]){
-         $sSignStr = '';
-        $aNeedColumns = $aNeedKeys;
-        if (!$aNeedKeys) {
-            $aNeedColumns = array_keys($aInputData);
-        }
-//        sort($aNeedColumns);
-//        var_dump($aNeedColumns);exit;
-        foreach ($aNeedColumns as $sColumn) {
-            if (isset($aInputData[$sColumn]) && $aInputData[$sColumn] != '') {
-                $sSignStr .= $sColumn . '=' .$aInputData[$sColumn] . '&';
-            }
-            if($sColumn=='partner'){
-                $sSignStr .= $sColumn . '=' .$aInputData[$sColumn] . '&';
-            }
-        }
-
-        $sSignStr = trim($sSignStr, '&');
-        $sSignStr .= '&key=' . $oPaymentAccount->safe_key;
-//        exit;
-        $sInputSign=$aInputData['sign'];
-        $b=($sInputSign == md5($sSignStr));
-        return $b;
-    }
 
 
     /**
@@ -252,7 +205,6 @@ class PaymentABWY extends BasePlatform
      */
     public function queryFromPlatform($oPaymentPlatform, $oPaymentAccount, $sOrderNo, $sServiceOrderNo = null, & $aResponses)
     {
-        $sServiceOrderNo = $this->serviceOrderNo;
         $aDataQuery = $this->compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo);
         $sDataQuery = http_build_query($aDataQuery);
         $ch = curl_init();
@@ -269,20 +221,23 @@ class PaymentABWY extends BasePlatform
         }
         curl_close($ch); //关闭curl链接
         $aResponses = json_decode($sResponse, true);
+
         //返回格式不对
-        if (!$aResponses || !isset($aResponses['status'])) {
+        if (!$aResponses || !isset($aResponses['rsp_code'])) {
             return self::PAY_QUERY_PARSE_ERROR;
         }
-        if ($aResponses['status'] != 1) {
+
+        if ($aResponses['rsp_code'] != 1) {
             //支付返回成功校验签名
             return self::PAY_NO_ORDER;
         }
-        if($aResponses['tradestate']!=1){
+
+        if($aResponses['ord_status']!=1){
             return self::PAY_UNPAY;
         }
 
-        $bSucc = $this->compileQueryResultSign($oPaymentAccount,$aResponses,$this->queryResultSignNeedColumns);
-        if(!$bSucc){
+        $sSign = $this->compileQueryResultSign($oPaymentAccount, $aResponses, $this->queryResultSignNeedColumns);
+        if ($sSign != $aResponses['sign']) {
             return self::PAY_SIGN_ERROR;
         }
 
@@ -297,12 +252,12 @@ class PaymentABWY extends BasePlatform
      */
     public static function & compileCallBackData($aBackData, $sIp)
     {
-        $oDeposit = Deposit::getDepositByNo($aBackData['ordernumber']);
+        $oDeposit = Deposit::getDepositByNo($aBackData['request_id']);
         $aData = [
-            'order_no' => $aBackData['ordernumber'],
-            'service_order_no' => $oDeposit ? date('YmdHis', strtotime($oDeposit->created_at)) : $aBackData['sysnumber'],
-            'merchant_code' => $aBackData['partner'],
-            'amount' => $aBackData['paymoney'],
+            'order_no' => $aBackData['request_id'],
+            'service_order_no' => $oDeposit ? date('YmdHis', strtotime($oDeposit->created_at)) : $aBackData['request_id'],
+            'merchant_code' => $aBackData['trx_key'],
+            'amount' => $aBackData['ord_amount'],
             'ip' => $sIp,
             'status' => DepositCallback::STATUS_CALLED,
             'post_data' => var_export($aBackData, true),
@@ -317,8 +272,8 @@ class PaymentABWY extends BasePlatform
     public static function & getServiceInfoFromQueryResult(& $aResponses)
     {
         $data = [
-            'service_order_no' => $aResponses['sysnumber'],
-            'order_no' => $aResponses['ordernumber'],
+            'service_order_no' => $aResponses['request_id'],
+            'order_no' => $aResponses['request_id'],
         ];
         return $data;
     }

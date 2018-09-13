@@ -138,8 +138,10 @@ class PaymentJFZFBWAP extends BasePlatform
      * @return string
      */
     public function & compileQueryResultSign($oPaymentAccount,$aInputData){
-        return $this->compileSign($oPaymentAccount,$aInputData,$this->compileQueryResultSign());
+        $sSign = $this->compileSign($oPaymentAccount,$aInputData,$this->queryResultSignNeedColumns);
+        return $sSign;
     }
+
     /**
      * 充值请求表单数据组建
      *
@@ -149,27 +151,6 @@ class PaymentJFZFBWAP extends BasePlatform
      * @param $oBank
      * @param $sSafeStr
      *
-     *
-    string(205) "version=3.0&method=Gt.online.interface&partner=1018&banktype=ALIPAYWAP&paymoney=1000.00&ordernumber=3657116465b73dede9e141&callbackurl=http://www.my6688.com/dnotify/cxzfbwapfb302abe638e58289c9e61a07324bfbe"
-    array(8) {
-    ["version"]=>
-    string(3) "3.0"
-    ["method"]=>
-    string(19) "Gt.online.interface"
-    ["partner"]=>
-    string(4) "1018"
-    ["banktype"]=>
-    string(9) "ALIPAYWAP"
-    ["paymoney"]=>
-    string(7) "1000.00"
-    ["ordernumber"]=>
-    string(22) "3657116465b73dede9e141"
-    ["callbackurl"]=>
-    string(38) "http://www.my6688.com/dnotify/cxzfbwap"
-    ["sign"]=>
-    string(32) "78926eb0a4833d7e67e3af64717be370"
-    }
-
      * @return array
      */
     public function & compileInputData($oPaymentPlatform, $oPaymentAccount, $oDeposit, $oBank, & $sSafeStr)
@@ -221,7 +202,8 @@ class PaymentJFZFBWAP extends BasePlatform
             $req_data.="<$k>$v</$k>";
         }
         $req_data.='</xml>';
-        return $req_data;
+        $data = ['req_data'=>$req_data];
+        return $data;
     }
 
 
@@ -247,33 +229,39 @@ class PaymentJFZFBWAP extends BasePlatform
         $sServiceOrderNo = $this->serviceOrderNo;
         $sDataQuery = $this->compileQueryData($oPaymentAccount, $sOrderNo, $sServiceOrderNo);
         $ch = curl_init();
+//        $url='http://www.my6688.com/test';
+        $url=$oPaymentPlatform->getQueryUrl($oPaymentAccount);
+//        var_dump($url);exit;
         curl_setopt($ch, CURLOPT_URL, $oPaymentPlatform->getQueryUrl($oPaymentAccount));
+//        curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); //将数据传给变量
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE); //取消身份验证
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $sDataQuery);
+//        curl_setopt($ch,CURLOPT_HEADER,
+//            [
+//                "Cache-Control: no-cache",
+//                "Content-Type: text/xml"
+//            ]
+//        );
         $sResponse = curl_exec($ch); //接收返回信息
         file_put_contents('/tmp/' . $this->paymentName . '_' . $sOrderNo, $sResponse . "\n", FILE_APPEND);
         if (curl_errno($ch)) {//出错则显示错误信息
             print curl_error($ch);
         }
-        curl_close($ch); //关闭curl链接
-        var_dump(__FILE__,__LINE__,$sResponse);
-        $aResponses = json_decode($sResponse, true);
-        var_dump(__FILE__,__LINE__,$aResponses);exit;
 
+        curl_close($ch); //关闭curl链接
+        $aResponses = (array)simplexml_load_string($sResponse);
         //返回格式不对
         if (!$aResponses || !isset($aResponses['retcode'])) {
             return self::PAY_QUERY_PARSE_ERROR;
         }
-
-        if ($aResponses['retcode'] != 1) {
+        if ($aResponses['retcode'] != 0) {
             //支付返回成功校验签名
             return self::PAY_NO_ORDER;
         }
 
-        $bSucc = $this->compileQueryResultSign($oPaymentAccount,$aResponses,$this->queryResultSignNeedColumns);
+        $sSign = $this->compileQueryResultSign($oPaymentAccount,$aResponses);
+        $bSucc = $sSign == $aResponses['sign'];
         if(!$bSucc){
             return self::PAY_SIGN_ERROR;
         }
