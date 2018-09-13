@@ -88,6 +88,10 @@ class PaymentABWY extends BasePlatform
      * @param       $aInputData
      * @param array $aNeedKeys
      *
+     * bank_code=1103&callback_url=http://www.my6688.com/dnotify/abwy&goods_name=hz&ord_amount=101.00&product_type=50103&request_id=13725283915b9a095872b72&request_ip=182.18.227.71&request_time=20180913145312&return_url=http://www.my6688.com/depositapi/abwy&trx_key=sfyceuzlxr1gdixb1lizvlg3kj7uypcc&secret_key=bbba9a939eb148be8fcc72bfd489e4d9
+     *
+     * bank_code=1103&callback_url=http://www.my668.com/dnotify/abwy&goods_name=hz&ord_amount=101&product_type=50103&request_id=6080129655b997b1f3b3b9a&request_ip=110.54.198.172&request_time=20180913044623&return_url=http://www.my6688.com/depositapi/abwy&trx_key=sfyceuzlxr1gdixb1lizvlg3kj7uypcc&secret_key=bbba9a939eb148be8fcc72bfd489e4d9
+     *
      * @return string
      */
     public function compileSign($oPaymentAccount, $aInputData, $aNeedKeys = [])
@@ -146,7 +150,7 @@ class PaymentABWY extends BasePlatform
     {
         $aData = [
             'trx_key' => $oPaymentAccount->account,
-            'ord_amount' => $oDeposit->amount,
+            'ord_amount' => number_format($oDeposit->amount,2),
             'request_id' => $oDeposit->order_no,
             'request_ip' => Tool::getClientIp(),
             'product_type' => $this->productType,
@@ -155,14 +159,10 @@ class PaymentABWY extends BasePlatform
             'bank_code' => $this->bankCode,
             'return_url' => $oPaymentPlatform->return_url,
             'callback_url' => $oPaymentPlatform->notify_url,
-
         ];
 
-//
         ksort($aData);
         $aData['sign'] =  $this->compileSign($oPaymentAccount, $aData, $this->signNeedColumns);
-//        var_dump($aData);
-//        exit;
         return $aData;
     }
 
