@@ -21,7 +21,7 @@ class PaymentABWY extends BasePlatform
     public $serviceOrderTimeColumn = 'trx_time';
 
     public $productType = '50103';
-    public $bankCode = '1103';
+    public $bankCode = '1308';
 
 
     protected $paymentName = 'abwy';
